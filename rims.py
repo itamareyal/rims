@@ -36,7 +36,7 @@ from ion_simulation import *
                                 DEFINES
 ----------------------------------------------------------------------'''
 
-ION_LIST = ["Lead Pb+2", "Potassium K+", "Calcium Ca+2", "Sodium Na+"]
+ION_LIST = ["Lead Pb+2", "Potassium K+", "Calcium Ca+2", "Sodium Na+", "Electron in Silicone"]
 FLASHING_MODES = [0,-1]
 
 
@@ -53,32 +53,17 @@ print("-------------------------------------------------------")
 
 input("\npress ENTER to begin...\n")
 
-
 print("-------------------------------------------------------")
 print("             Step 1- Configure the system")
 print("-------------------------------------------------------")
-
-# print("Please specify the ions in the system and their quantities.")
-# print("List ions in the following format: symbol charge mols\nSeperate ions by comma and press ENTER: \n")
-# print("\nFor example: \tH +1 2, Ag +2 5\n")
-#
-# ions_verified = False
-#
-# while ions_verified == False:
-#     ion_str = input("Enter ions: ")
-#     if ion_str == '':
-#         continue
-#     ions_dict_list = ion_inputs_to_attributes(ion_str)
-#     ions_verified = verify_ions(ions_dict_list)
-#
-# print_ions(ions_dict_list)
 
 print("\nSelect an ion to be simulated from the following list:")
 print("\t1) Lead Pb+2")
 print("\t2) Potassium K+")
 print("\t3) Calcium Ca+2")
 print("\t4) Sodium Na+")
-number_selection = int(input("Enter your selection:"))
+print("\t5) Electron in Silicone")
+number_selection = int(input("Enter your selection:")) -1
 ion_selection = ION_LIST[number_selection]
 
 print("\nIon selected: "+ion_selection)
@@ -88,29 +73,47 @@ print("-------------------------------------------------------")
 print("             Step 2- Configure the ratchet")
 print("-------------------------------------------------------")
 
-print("Please describe the potential profile applied on the system.\n")
-print("                    _          ")
-print("        / |\         |         ")
-print("      /   | \        | A[v]    ")
-print("    /     |  \       |         ")
-print("  /       |   \     _|         ")
-print("                               ")
-print("  \______/\____/               ")
-print("    a[um]   b[um]            \n")
+print("\nEnter ratchet function:\n\t1)Saw wave\n\t2)Double Sin\n")
+ratchet_number = int(input("Ratchet function = "))
+if ratchet_number ==1:
 
-a = float(input("\ta[um] = "))
-b = float(input("\tb[um] = "))
-A = float(input("\tA[v] = "))
+    print("Please describe the potential profile applied on the system.\n")
+    print("                    _          ")
+    print("        / |\         |         ")
+    print("      /   | \        | A[v]    ")
+    print("    /     |  \       |         ")
+    print("  /       |   \     _|         ")
+    print("                               ")
+    print("  \______/\____/               ")
+    print("    a[um]   b[um]            \n")
+
+    a = float(input("\ta[um] = "))
+    b = float(input("\tb[um] = "))
+    A = float(input("\tA[v] = "))
+    potential_profile = [a, b, A, ratchet_number]
+
+else:
+    print("Please enter ratchet sin wave parameters.\n")
+    print("                    _          ")
+    print("        / |\        _| a2[v]   ")
+    print("      /   | \        |         ")
+    print("    /     |  \       | a1[v]   ")
+    print("  /       |   \     _|         ")
+    print("                               ")
+    print("  \____________/               ")
+    print("        L[um]                \n")
+    print("qV(x) = a1 * sin(2pi * x / L) + a2 * sin(4pi * x / L)\n")
+    L = float(input("\tL[um] = "))
+    a1 = float(input("\ta1[v] = "))
+    a2 = float(input("\ta2[v] = "))
+    potential_profile = [L, a1, a2, ratchet_number]
 
 
 print("\nEnter ratchet flashing frequency in KHz:")
-flash_frequency = int(input("Ratchet frequency [KHz] = "))
+flash_frequency = int(input("Ratchet frequency [KHz] = ")) *1000
 print("\nEnter flashing mode number:\n\t1)ON/OFF\n\t2)+/-\n")
-flash_number = int(input("Flashing mode = "))
+flash_number = int(input("Flashing mode = ")) -1
 flash_mode = FLASHING_MODES[flash_number]
-flash_period = 1 / flash_frequency
-potential_profile = [a,b,A]
-
 
 
 class rims:

@@ -125,9 +125,6 @@ class ion:
             x = np.linspace(0, L)
             V = a1 * np.sin(2*np.pi *x / L) + a2 * np.sin(4*np.pi *x / L)
             E = -np.gradient(V)
-            # plt.plot(V)
-            # plt.plot(E)
-            # plt.show()
 
         else: #saw
             a = self.potential_profile_list[0]
@@ -143,10 +140,10 @@ class ion:
             step = np.heaviside(x-a,1)
             V=  f1 -step*f1 + step* f2
             E= -np.gradient(V)
-            # plt.plot(V)
-            # plt.plot(E)
-            # plt.show()
 
+        # plt.plot(x,V)
+        # plt.plot(x,E)
+        # plt.show()
 
         self.electric_field = E
         self.potential_profile = V

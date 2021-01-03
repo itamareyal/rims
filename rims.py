@@ -37,7 +37,7 @@ from ion_simulation import *
 ----------------------------------------------------------------------'''
 
 ION_LIST = ["Lead Pb+2", "Potassium K+", "Calcium Ca+2", "Sodium Na+", "Electron in Silicone"]
-FLASHING_MODES = [0,-1]
+FLASHING_MODES = [0,-0.5]
 
 
 '''----------------------------------------------------------------------
@@ -63,59 +63,72 @@ print("\t2) Potassium K+")
 print("\t3) Calcium Ca+2")
 print("\t4) Sodium Na+")
 print("\t5) Electron in Silicone")
+print("\t6) debug")
 number_selection = int(input("Enter your selection:")) -1
-ion_selection = ION_LIST[number_selection]
-
-print("\nIon selected: "+ion_selection)
-input("Press Enter to confirm...")
-
-print("-------------------------------------------------------")
-print("             Step 2- Configure the ratchet")
-print("-------------------------------------------------------")
-
-print("\nEnter ratchet function:\n\t1)Saw wave\n\t2)Double Sin\n")
-ratchet_number = int(input("Ratchet function = "))
-if ratchet_number ==1:
-
-    print("Please describe the potential profile applied on the system.\n")
-    print("                    _          ")
-    print("        / |\         |         ")
-    print("      /   | \        | A[v]    ")
-    print("    /     |  \       |         ")
-    print("  /       |   \     _|         ")
-    print("                               ")
-    print("  \______/\____/               ")
-    print("    a[um]   b[um]            \n")
-
-    a = float(input("\ta[um] = "))
-    b = float(input("\tb[um] = "))
-    A = float(input("\tA[v] = "))
-    potential_profile = [a, b, A, ratchet_number]
-
-else:
-    print("Please enter ratchet sin wave parameters.\n")
-    print("                    _          ")
-    print("        / |\        _| a2[v]   ")
-    print("      /   | \        |         ")
-    print("    /     |  \       | a1[v]   ")
-    print("  /       |   \     _|         ")
-    print("                               ")
-    print("  \____________/               ")
-    print("        L[um]                \n")
-    print("qV(x) = a1 * sin(2pi * x / L) + a2 * sin(4pi * x / L)\n")
-    L = float(input("\tL[um] = "))
-    a1 = float(input("\ta1[v] = "))
-    a2 = float(input("\ta2[v] = "))
+if number_selection == 5:
+    ion_selection = ION_LIST[4]
+    ratchet_number =2
+    L = 0.8
+    a1 = 0.25
+    a2 = 0.05
     potential_profile = [L, a1, a2, ratchet_number]
+    flash_frequency = 600000
+    dc = 0.6
+    flash_number = 1
+    flash_mode = -0.5
+else:
+
+    ion_selection = ION_LIST[number_selection]
+
+    print("\nIon selected: "+ion_selection)
+
+    print("-------------------------------------------------------")
+    print("             Step 2- Configure the ratchet")
+    print("-------------------------------------------------------")
+
+    print("\nEnter ratchet function:\n\t1)Saw wave\n\t2)Double Sin\n")
+    ratchet_number = int(input("Ratchet function = "))
+    if ratchet_number ==1:
+
+        print("Please describe the potential profile applied on the system.\n")
+        print("                    _          ")
+        print("        / |\         |         ")
+        print("      /   | \        | A[v]    ")
+        print("    /     |  \       |         ")
+        print("  /       |   \     _|         ")
+        print("                               ")
+        print("  \______/\____/               ")
+        print("    a[um]   b[um]            \n")
+
+        a = float(input("\ta[um] = "))
+        b = float(input("\tb[um] = "))
+        A = float(input("\tA[v] = "))
+        potential_profile = [a, b, A, ratchet_number]
+
+    else:
+        print("Please enter ratchet sin wave parameters.\n")
+        print("                    _          ")
+        print("        / |\        _| a2[v]   ")
+        print("      /   | \        |         ")
+        print("    /     |  \       | a1[v]   ")
+        print("  /       |   \     _|         ")
+        print("                               ")
+        print("  \____________/               ")
+        print("        L[um]                \n")
+        print("qV(x) = a1 * sin(2pi * x / L) + a2 * sin(4pi * x / L)\n")
+        L = float(input("\tL[um] = "))
+        a1 = float(input("\ta1[v] = "))
+        a2 = float(input("\ta2[v] = "))
+        potential_profile = [L, a1, a2, ratchet_number]
 
 
-print("\nEnter ratchet flashing frequency in Hz:")
-flash_frequency = int(input("Ratchet frequency [Hz] = "))
-print("\nEnter ratchet duty cycle from 0-1:")
-dc = float(input("DC = "))
-print("\nEnter flashing mode number:\n\t1)ON/OFF\n\t2)+/-\n")
-flash_number = int(input("Flashing mode = ")) -1
-flash_mode = FLASHING_MODES[flash_number]
+    print("\nEnter ratchet flashing frequency in Hz:")
+    flash_frequency = int(input("Ratchet frequency [Hz] = "))
+    print("\nEnter ratchet duty cycle from 0-1:")
+    dc = float(input("DC = "))
+    print("\nEnter flashing mode number:\n\t1)ON/OFF\n\t2)+/-\n")
+    flash_number = int(input("Flashing mode = ")) -1
+    flash_mode = FLASHING_MODES[flash_number]
 
 
 class rims:
@@ -125,7 +138,7 @@ class rims:
         self.flash_frequency = flash_frequency
         self.flash_mode = flash_mode
         self.dc = dc
-        self.number_of_simulations = 100
+        self.number_of_simulations = 10000
 
     def create_ion(self):
         self.start_time = datetime.now()
@@ -134,10 +147,9 @@ class rims:
         i.create_arena()
         i.get_intervals()
         i.get_gamma()
-        print("\nIon profile for simulation created.")
         return i
 
-    def create_histogram(self, ion):
+    def create_histogram(self,):
         print("\nRIMS simulation in progress...")
 
 
@@ -149,7 +161,8 @@ class rims:
         bar.start()
 
         while simulation_count < self.number_of_simulations:
-            x_results.append(ion.simulate_ion())
+            ion_subject = self.create_ion()
+            x_results.append(ion_subject.simulate_ion())
             simulation_count += 1
             bar.update(simulation_count)
         print("\nDone!")
@@ -170,7 +183,7 @@ class rims:
 
 r= rims(ion_selection, potential_profile, flash_frequency, flash_mode, dc)
 
-r.create_histogram(r.create_ion())
+r.create_histogram()
 
         
 

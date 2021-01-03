@@ -7,8 +7,10 @@ ion_simulation.py
 ----------------------------------------------------------------------'''
 import sympy as sym
 from sympy import *
+from sympy import Heaviside, S
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 '''----------------------------------------------------------------------
                                 DEFINES
@@ -68,8 +70,8 @@ class ion:
 
 
     def electric_force(self, x):
-        electric_field = self.electric_field(x)
-        return - self.gamma * electric_field
+        electric_field = self.electric_field[x]
+        return  self.gamma * electric_field
 
 
     def noise(self):
@@ -100,11 +102,14 @@ class ion:
             f=  f1 -step*f1 + step* f2
             self.arena = f
 
+
+
+
     def electric_field(self):
         # Description: derives the electric field from the potential, E(x).
         # Parameters: self
         # Return: saves E(x) as attribute self.electric field and V(x) as self.potential_profile.
-        x = Symbol('x')
+        #x = Symbol('x')
 
         if self.potential_profile_list[3] == 2: #sin
             L = self.potential_profile_list[0]
@@ -112,20 +117,35 @@ class ion:
             a2 = self.potential_profile_list[2]
             # teta1 = np.divide(np.multiply(x , np.multiply(2,np.pi)),L)
             # teta2 = np.divide(np.multiply(x, np.multiply(4, np.pi)), L)
-            V= a1 * sym.sin(2*sym.pi *x / L) + a2 * sym.sin(4*sym.pi *x / L)
+            #V= a1 * sym.sin(2*sym.pi *x / L) + a2 * sym.sin(4*sym.pi *x / L)
+            #E = V.diff(x)
+            x = np.linspace(0, L)
+            V = a1 * np.sin(2*np.pi *x / L) + a2 * np.sin(4*np.pi *x / L)
+            E = -np.gradient(V)
+            # plt.plot(V)
+            # plt.plot(E)
+            # plt.show()
 
         else: #saw
             a = self.potential_profile_list[0]
             b = self.potential_profile_list[1]
             A = self.potential_profile_list[2]
-            f1=A * np.divide(x,a)
-            f2=A * np.divide((x-(a+b)),(-b))
-            step = 0.5*(np.sign(x-a) +1)
-            f=  f1 -step*f1 + step* f2
-            V= f
 
-        E = V.diff(x)
-        self.electric_field = lambdify(x, E, 'numpy')
+            x = np.linspace(0,a+b)
+            f1=A * np.divide(x,a)
+            #e1 = f1.diff(x)
+            f2=A * np.divide((x-(a+b)),(-b))
+            #e2 = f2.diff(x)
+            #step = 0.5*(np.sign(x-a) +1)
+            step = np.heaviside(x-a,1)
+            V=  f1 -step*f1 + step* f2
+            E= -np.gradient(V)
+            # plt.plot(V)
+            # plt.plot(E)
+            # plt.show()
+
+
+        self.electric_field = E
         self.potential_profile = V
         return
 

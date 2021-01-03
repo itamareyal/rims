@@ -109,25 +109,28 @@ else:
     potential_profile = [L, a1, a2, ratchet_number]
 
 
-print("\nEnter ratchet flashing frequency in KHz:")
-flash_frequency = int(input("Ratchet frequency [KHz] = ")) *1000
+print("\nEnter ratchet flashing frequency in Hz:")
+flash_frequency = int(input("Ratchet frequency [Hz] = "))
+print("\nEnter ratchet duty cycle from 0-1:")
+dc = float(input("DC = "))
 print("\nEnter flashing mode number:\n\t1)ON/OFF\n\t2)+/-\n")
 flash_number = int(input("Flashing mode = ")) -1
 flash_mode = FLASHING_MODES[flash_number]
 
 
 class rims:
-    def __init__(self, ion, potential_profile, flash_frequency, flash_mode):
+    def __init__(self, ion, potential_profile, flash_frequency, flash_mode, dc):
         self.ion = ion
         self.potential_profile = potential_profile
         self.flash_frequency = flash_frequency
         self.flash_mode = flash_mode
+        self.dc = dc
         self.number_of_simulations = 100
 
     def create_ion(self):
         self.start_time = datetime.now()
         print(self.ion)
-        i = ion(self.ion, self.potential_profile, self.flash_frequency, flash_mode)
+        i = ion(self.ion, self.potential_profile, self.flash_frequency, flash_mode, self.dc)
         i.create_arena()
         i.get_intervals()
         i.get_gamma()
@@ -137,18 +140,21 @@ class rims:
     def create_histogram(self, ion):
         print("\nRIMS simulation in progress...")
 
+
+        x_results = []
+        simulation_count =0
+
         bar = progressbar.ProgressBar(maxval=self.number_of_simulations,
         widgets=[progressbar.Bar('=', '\t[', ']'), ' ', progressbar.Percentage()])
         bar.start()
-        x_results = []
-        simulation_count =0
+
         while simulation_count < self.number_of_simulations:
             x_results.append(ion.simulate_ion())
             simulation_count += 1
             bar.update(simulation_count)
         print("\nDone!")
         print("\nPlotting results...")
-        plt.hist(x_results, density=True, bins=30, label="Data")
+        plt.hist(x_results, density=True, bins=30, label="X[um]")
         mn, mx = plt.xlim()
         plt.xlim(mn, mx)
         kde_xs = np.linspace(mn, mx, 301)
@@ -156,13 +162,13 @@ class rims:
         plt.plot(kde_xs, kde.pdf(kde_xs), label="PDF")
         plt.legend(loc="upper left")
         plt.ylabel('Probability')
-        plt.xlabel('Data')
+        plt.xlabel('X[um]')
         plt.title("Histogram")
         print("\ndone.")
         plt.show()
 
 
-r= rims(ion_selection, potential_profile, flash_frequency, flash_mode)
+r= rims(ion_selection, potential_profile, flash_frequency, flash_mode, dc)
 
 r.create_histogram(r.create_ion())
 

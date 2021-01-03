@@ -25,16 +25,17 @@ diffusion_coefficient_dict = {
 }
 
 INTERVALS_FLASH_RATIO = 10
-BOLTZMANN_CONSTANT = 1.38064852 * pow(10,-23)
+BOLTZMANN_CONSTANT = 8.617333262 * pow(10,-5)
 AVOGADRO_NUMBER = 6.0221409 * pow(np.e,23)
 TEMPERATURE = 298
+RESOLUTION = 50
 
 '''----------------------------------------------------------------------
                             IMPLEMENTATIONS
 ----------------------------------------------------------------------'''
 
 class ion:
-    def __init__(self, ion, potential_profile, flash_frequency, flash_mode):
+    def __init__(self, ion, potential_profile, flash_frequency, flash_mode, dc):
 
         self.ion = ion
         self.diffusion = diffusion_coefficient_dict[ion]
@@ -42,8 +43,9 @@ class ion:
         self.flash_frequency = flash_frequency
         self.flash_period = 1 / flash_frequency
         self.flash_mode = flash_mode
+        self.dc = dc
 
-        if potential_profile[3] == 1:
+        if potential_profile[3] == 2: #sin
             self.L = potential_profile[0]
         else:
             self.L = potential_profile[0] + potential_profile[1]
@@ -62,7 +64,7 @@ class ion:
 
 
     def get_intervals(self):
-        self.interval = self.flash_period / INTERVALS_FLASH_RATIO
+        self.interval = ((1 / INTERVALS_FLASH_RATIO) * self.L) ** 2 /(2 *self.diffusion)
 
 
     def get_gamma(self):
@@ -70,8 +72,9 @@ class ion:
 
 
     def electric_force(self, x):
-        electric_field = self.electric_field[x]
-        return  self.gamma * electric_field
+        index_in_array = int(x * RESOLUTION / self.L)
+        electric_field = self.electric_field[index_in_array]
+        return  self.gamma * electric_field * self.ratchet_mode()
 
 
     def noise(self):
@@ -154,11 +157,11 @@ class ion:
         # Description: checks if the ratchet is on or off (or negative).
         # Parameters: self
         # Return: 1 for on, 0 for off, -1 for negative.
-        mode = np.divide(self.intervals_count ,self.flash_period)
-        if mode % 2:
-            return self.flash_mode
-        else:
+        t_prime = np.mod(self.intervals_count * self.interval ,self.flash_period)
+        if t_prime < self.dc * self.flash_period:
             return 1
+        else:
+            return self.flash_mode
 
 
     def get_new_x(self):
@@ -166,12 +169,15 @@ class ion:
         # Parameters: self
         # Return: new location of the ion.
         xt = self.loc
-        new_x = xt + np.multiply(self.electric_force(xt), self.interval) + self.noise()
+        noise = self.noise()
+        fe = self.electric_force(xt)
+        em = np.multiply(fe, self.interval)
+        new_x = xt + em + noise
 
         while new_x > self.L:
             new_x -= self.L
             self.arena_count += 1
-        while new_x < self.L:
+        while new_x < 0:
             new_x += self.L
             self.arena_count -= 1
 

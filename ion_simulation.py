@@ -11,6 +11,8 @@ from sympy import Heaviside, S
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import os
+import csv
 
 '''----------------------------------------------------------------------
                                 DEFINES
@@ -35,11 +37,15 @@ RESOLUTION = 50
 ----------------------------------------------------------------------'''
 
 class ion:
-    def __init__(self, ion, potential_profile, flash_frequency, flash_mode, dc):
+    def __init__(self, ion, potential_profile, flash_frequency, flash_mode, dc, E, V, path):
 
         self.ion = ion
         self.diffusion = diffusion_coefficient_dict[ion]
         self.potential_profile_list= potential_profile
+
+        self.electric_field = E
+        self.potential_profile = V
+
         self.flash_frequency = flash_frequency
         self.flash_period = 1 / flash_frequency
         self.flash_mode = flash_mode
@@ -50,11 +56,12 @@ class ion:
         else:
             self.L = potential_profile[0] + potential_profile[1]
         self.loc = random.uniform(0,self.L)
+        self.x0= self.loc
 
         self.intervals_count = 0
         self.points = 100
         self.arena_count = 0
-        self.loc_hist = 0
+        self.path = path
 
         # attributes calculated in simulation
         self.arena = -1
@@ -105,51 +112,6 @@ class ion:
             f=  f1 -step*f1 + step* f2
             self.arena = f
 
-
-
-
-    def electric_field(self):
-        # Description: derives the electric field from the potential, E(x).
-        # Parameters: self
-        # Return: saves E(x) as attribute self.electric field and V(x) as self.potential_profile.
-        #x = Symbol('x')
-
-        if self.potential_profile_list[3] == 2: #sin
-            L = self.potential_profile_list[0]
-            a1 = self.potential_profile_list[1]
-            a2 = self.potential_profile_list[2]
-            # teta1 = np.divide(np.multiply(x , np.multiply(2,np.pi)),L)
-            # teta2 = np.divide(np.multiply(x, np.multiply(4, np.pi)), L)
-            #V= a1 * sym.sin(2*sym.pi *x / L) + a2 * sym.sin(4*sym.pi *x / L)
-            #E = V.diff(x)
-            x = np.linspace(0, L)
-            V = a1 * np.sin(2*np.pi *x / L) + a2 * np.sin(4*np.pi *x / L)
-            E = -np.gradient(V)
-
-        else: #saw
-            a = self.potential_profile_list[0]
-            b = self.potential_profile_list[1]
-            A = self.potential_profile_list[2]
-
-            x = np.linspace(0,a+b)
-            f1=A * np.divide(x,a)
-            #e1 = f1.diff(x)
-            f2=A * np.divide((x-(a+b)),(-b))
-            #e2 = f2.diff(x)
-            #step = 0.5*(np.sign(x-a) +1)
-            step = np.heaviside(x-a,1)
-            V=  f1 -step*f1 + step* f2
-            E= -np.gradient(V)
-
-        # plt.plot(x,V)
-        # plt.plot(x,E)
-        # plt.show()
-
-        self.electric_field = E
-        self.potential_profile = V
-        return
-
-
     def ratchet_mode(self):
         # Description: checks if the ratchet is on or off (or negative).
         # Parameters: self
@@ -181,6 +143,7 @@ class ion:
         return new_x
 
 
+
     def simulate_ion(self):
         # Description: simulate ion movement over number of iterations.
         # Parameters: self
@@ -188,13 +151,15 @@ class ion:
         ion.get_intervals(self)
         ion.get_gamma(self)
         ion.create_arena(self)
-        ion.electric_field(self)
+        #ion.electric_field(self)
+
         new_x =0
         while self.intervals_count <= self.points:
 
             new_x = ion.get_new_x(self)
             self.loc = new_x
             self.intervals_count += 1
+
 
         return self.L * self.arena_count + new_x
 

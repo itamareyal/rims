@@ -25,6 +25,7 @@ Tel-Aviv university
 import scipy.stats as st
 from datetime import datetime
 from ion_simulation import *
+from video_gen import *
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
@@ -73,21 +74,23 @@ class rims:
             L = self.potential_profile_list[0]
             a1 = self.potential_profile_list[1]
             a2 = self.potential_profile_list[2]
-            x = np.linspace(0, L)
+            x = np.linspace(0, L, num=RESOLUTION)
             V = a1 * np.sin(2*np.pi *x / L) + a2 * np.sin(4*np.pi *x / L)
-            E = -np.gradient(V)
+            #dx = L/RESOLUTION
+
 
         else: #saw
             a = self.potential_profile_list[0]
             b = self.potential_profile_list[1]
             A = self.potential_profile_list[2]
 
-            x = np.linspace(0,a+b)
+            x = np.linspace(0,a+b, num=RESOLUTION)
             f1=A * np.divide(x,a)
             f2=A * np.divide((x-(a+b)),(-b))
             step = np.heaviside(x-a,1)
             V=  f1 -step*f1 + step* f2
-            E= -np.gradient(V)
+            #dx = (a+b)/RESOLUTION
+        E= -np.gradient(V,RESOLUTION * 0.00005)
 
         plt.figure(0)
         plt.plot(x,V, label="V(x)")
@@ -107,14 +110,14 @@ class rims:
         if not os.path.exists(self.path_for_output):
             os.makedirs(self.path_for_output)
         plt.figure(fig_number)
-        plt.savefig(self.path_for_output+name+'.png')
+        plt.savefig(self.path_for_output+name+'.jpeg')
         print(name+' saved to output plots.')
 
 
     def create_trace_file(self, ion_subject):
         with open(self.path_for_output + 'simulation trace.csv',newline='', mode='a') as csv_file:
             writer = csv.writer(csv_file,  delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            writer.writerow(['X0', 'X'+str(ion_subject.points)])
+            writer.writerow(['X0[um]', 'X'+str(ion_subject.points)+'[um]'])
 
 
     def write_to_trace_file(self, ion_subject):
@@ -148,7 +151,7 @@ class rims:
         print("Simulation log file created and saved.\n")
         print("Plotting results...\n")
         plt.figure(1)
-        plt.hist(x_results, density=True, bins=30, label="X[um]")
+        plt.hist(x_results, density=True, bins=RESOLUTION, label="X[um]")
         mn, mx = plt.xlim()
         plt.xlim(mn, mx)
         kde_xs = np.linspace(mn, mx, 301)
@@ -160,6 +163,56 @@ class rims:
         plt.title("Histogram")
         self.save_plots('Distribution x axis histogram',1)
         plt.show()
+
+
+    def create_video(self):
+        print("\nRIMS simulation in progress...")
+        print("\nCreating frames for video...")
+        frames = 100
+        ion_subject = self.create_ion()
+        for frame in range(frames):
+            frame+=1
+            x_results = []
+            simulation_count = 0
+
+            if not os.path.exists(self.path_for_output + 'frames'):
+                os.makedirs(self.path_for_output + 'frames')
+
+            self.create_trace_file(ion_subject)
+
+            while simulation_count < self.number_of_simulations:
+                ion_subject = self.create_ion()
+                ion_subject.points = frame
+                x_results.append(ion_subject.simulate_ion())
+                simulation_count += 1
+
+                prog = simulation_count * 100 / int(self.number_of_simulations)
+                sys.stdout.write("\r%d%% " % prog)
+                sys.stdout.flush()
+
+                self.write_to_trace_file(ion_subject)
+
+
+
+            plt.figure(frame)
+            plt.hist(x_results, density=True, bins=RESOLUTION, label="X[um]", range=(-5,5))
+            mn, mx = plt.xlim()
+            plt.xlim(mn, mx)
+            kde_xs = np.linspace(mn, mx, 301)
+            kde = st.gaussian_kde(x_results)
+            plt.plot(kde_xs, kde.pdf(kde_xs), label="PDF")
+            plt.legend(loc="upper left")
+            plt.ylabel('Probability')
+            plt.xlabel('X[um]')
+            plt.title("Histogram")
+            plt.suptitle('Time: '+str(ion_subject.interval * ion_subject.intervals_count)+'[u_sec]', fontsize=10)
+            plt.ylim(0,3)
+            self.save_plots('frames\\frame_'+str(frame), frame)
+            plt.close(frame)
+        print("\nSimulation finished after " + str(datetime.now() - self.start_time) + "\n")
+        self.create_log_file(ion_subject)
+        print("Simulation log file created and saved.\n")
+
 
 
     def create_log_file(self, ion_subject):
@@ -193,8 +246,9 @@ class rims:
         f.write("\nSimulation settings\n")
         f.write("\tparticles simulated: " + str(self.number_of_simulations) + "\n")
         f.write("\tmeasurements per particle: " + str(ion_subject.points) + "\n")
-        f.write("\tintervals (delta_t): "+str(ion_subject.interval)+"[sec]\n")
+        f.write("\tintervals (delta_t): "+str(ion_subject.interval)+"e-6[sec]\n")
         f.write("\tfriction coefficient (gamma): " + str(ion_subject.gamma) + "\n")
+        f.write("\tresolution: " + str(RESOLUTION) + "\n")
 
         f.close()
 
@@ -234,6 +288,7 @@ if number_selection == 5:
     dc = 0.6
     flash_number = 1
     flash_mode = -0.5
+    output_selection =1
 
 else:
 
@@ -289,10 +344,23 @@ else:
     flash_number = int(input("Flashing mode = ")) -1
     flash_mode = FLASHING_MODES[flash_number]
 
+    print("-------------------------------------------------------")
+    print("             Step 3- Outputs selection")
+    print("-------------------------------------------------------")
+    print("\nEnter desired output combination:\n\t1)Histogram\n\t2)Video (about 40min to generate)\n\t3)both")
+    output_selection = int(input("Enter your selection:"))
 
 r= rims(ion_selection, potential_profile, flash_frequency, flash_mode, dc)
 r.electric_field()
-r.create_histogram()
+if output_selection==1:
+    r.create_histogram()
+elif output_selection==2:
+    r.create_video()
+    generate_video_from_frames(r.path_for_output + 'frames', 'clip.avi')
+else:
+    r.create_video()
+    generate_video_from_frames(r.path_for_output + 'frames', 'clip.avi')
+    r.create_histogram()
 
         
 

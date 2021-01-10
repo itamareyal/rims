@@ -1,18 +1,17 @@
 '''
 ion_simulation.py
+
+Calculates the location of an ion for every time interval.
 '''
 
 '''----------------------------------------------------------------------
                                 IMPORTS
 ----------------------------------------------------------------------'''
-import sympy as sym
-from sympy import *
-from sympy import Heaviside, S
+
 import numpy as np
 import random
-import matplotlib.pyplot as plt
-import os
 import csv
+
 
 '''----------------------------------------------------------------------
                                 DEFINES
@@ -30,7 +29,7 @@ INTERVALS_FLASH_RATIO = 10
 BOLTZMANN_CONSTANT = 8.617333262 * pow(10,-5)
 AVOGADRO_NUMBER = 6.0221409 * pow(np.e,23)
 TEMPERATURE = 298
-RESOLUTION = 50
+RESOLUTION = 1000
 
 '''----------------------------------------------------------------------
                             IMPLEMENTATIONS
@@ -85,7 +84,6 @@ class ion:
 
 
     def noise(self):
-        #var = np.divide(1,np.sqrt(4 * np.pi * self.diffusion * self.interval))
         ksai = np.random.normal(0, 1)
         return np.multiply(ksai,np.sqrt(2 * self.diffusion * self.interval))
 
@@ -94,6 +92,7 @@ class ion:
         # Description: Creates the potential profile V(x) over one period. for plotting.
         # Parameters: self
         # Return: saves the arena as attribute self.arena
+
         if self.potential_profile_list[3] == 2: #sin
             L = self.potential_profile_list[0]
             a1 = self.potential_profile_list[1]
@@ -112,10 +111,12 @@ class ion:
             f=  f1 -step*f1 + step* f2
             self.arena = f
 
+
     def ratchet_mode(self):
         # Description: checks if the ratchet is on or off (or negative).
         # Parameters: self
         # Return: 1 for on, 0 for off, -1 for negative.
+
         t_prime = np.mod(self.intervals_count * self.interval ,self.flash_period)
         if t_prime < self.dc * self.flash_period:
             return 1
@@ -127,6 +128,7 @@ class ion:
         # Description: calculate location for next iteration, update to arena count.
         # Parameters: self
         # Return: new location of the ion.
+
         xt = self.loc
         noise = self.noise()
         fe = self.electric_force(xt)
@@ -143,15 +145,14 @@ class ion:
         return new_x
 
 
-
     def simulate_ion(self):
         # Description: simulate ion movement over number of iterations.
         # Parameters: self
         # Return: location of the ion at the nd of the simulation.
+
         ion.get_intervals(self)
         ion.get_gamma(self)
         ion.create_arena(self)
-        #ion.electric_field(self)
 
         new_x =0
         while self.intervals_count <= self.points:
@@ -159,7 +160,6 @@ class ion:
             new_x = ion.get_new_x(self)
             self.loc = new_x
             self.intervals_count += 1
-
 
         return self.L * self.arena_count + new_x
 

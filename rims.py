@@ -93,14 +93,13 @@ class rims:
         E= -np.gradient(V,RESOLUTION * 0.00005)
 
         plt.figure(0)
-        plt.plot(x,V, label="V(x)")
-        plt.plot(x,E, label="E(x)")
+        plt.plot(x,V, label="V(x) potential profile", color='#f5bc42')
+        plt.plot(x,E, label=r"E(x) electric field = -$\nabla $V", color='#892fba')
         plt.suptitle('RIMS: Ratchet potential profile', fontsize=14, fontweight='bold')
-        plt.xlabel("X [um]")
-        plt.ylabel("V [v]")
+        plt.xlabel(r"X [$\mu $m]")
+        plt.ylabel(r"V [v] , E [v/$\mu $m]")
         plt.legend(loc="upper left")
         self.save_plots('Ratchet potential profile',0)
-
         self.electric_field = E
         self.potential_profile = V
         return
@@ -151,16 +150,17 @@ class rims:
         print("Simulation log file created and saved.\n")
         print("Plotting results...\n")
         plt.figure(1)
-        plt.hist(x_results, density=True, bins=RESOLUTION, label="X[um]")
-        mn, mx = plt.xlim()
-        plt.xlim(mn, mx)
-        kde_xs = np.linspace(mn, mx, 301)
-        kde = st.gaussian_kde(x_results)
-        plt.plot(kde_xs, kde.pdf(kde_xs), label="PDF")
-        plt.legend(loc="upper left")
-        plt.ylabel('Probability')
-        plt.xlabel('X[um]')
-        plt.title("Histogram")
+        weights = np.ones_like(x_results)/float(len(x_results))
+        plt.hist(x_results, weights=weights, bins=RESOLUTION, label=r"X [$\mu $m]")
+        # mn, mx = plt.xlim()
+        # plt.xlim(mn, mx)
+        # kde_xs = np.linspace(mn, mx, 300)
+        # kde = st.gaussian_kde(x_results)
+        # plt.plot(kde_xs, kde.pdf(kde_xs), label="PDF")
+        #plt.legend(loc="upper left")
+        plt.ylabel('Density')
+        plt.xlabel(r'X [$\mu $m]')
+        plt.title(r"Histogram of distribution x axis: $\rho $(x)")
         self.save_plots('Distribution x axis histogram',1)
         plt.show()
 
@@ -191,22 +191,20 @@ class rims:
                 sys.stdout.flush()
 
                 self.write_to_trace_file(ion_subject)
-
-
-
             plt.figure(frame)
-            plt.hist(x_results, density=True, bins=RESOLUTION, label="X[um]", range=(-5,5))
-            mn, mx = plt.xlim()
-            plt.xlim(mn, mx)
-            kde_xs = np.linspace(mn, mx, 301)
-            kde = st.gaussian_kde(x_results)
-            plt.plot(kde_xs, kde.pdf(kde_xs), label="PDF")
-            plt.legend(loc="upper left")
-            plt.ylabel('Probability')
-            plt.xlabel('X[um]')
-            plt.title("Histogram")
-            plt.suptitle('Time: '+str(ion_subject.interval * ion_subject.intervals_count)+'[u_sec]', fontsize=10)
-            plt.ylim(0,3)
+            weights = np.ones_like(x_results) / float(len(x_results))
+            plt.hist(x_results, weights=weights, bins=RESOLUTION, label=r"X [$\mu $m]", range=(-5,5))
+            # mn, mx = plt.xlim()
+            # plt.xlim(mn, mx)
+            # kde_xs = np.linspace(mn, mx, 301)
+            # kde = st.gaussian_kde(x_results)
+            # plt.plot(kde_xs, kde.pdf(kde_xs), label="PDF")
+            #plt.legend(loc="upper left")
+            plt.ylim(0,0.035)
+            plt.ylabel('Density')
+            plt.xlabel(r'X [$\mu $m]')
+            plt.title(r"Histogram of distribution x axis: $\rho $(x,t)")
+            plt.suptitle('t = '+str(ion_subject.interval * ion_subject.intervals_count)[0:8]+r' [$\mu $sec]', fontsize=10)
             self.save_plots('frames\\frame_'+str(frame), frame)
             plt.close(frame)
         print("\nSimulation finished after " + str(datetime.now() - self.start_time) + "\n")
@@ -288,7 +286,7 @@ if number_selection == 5:
     dc = 0.6
     flash_number = 1
     flash_mode = -0.5
-    output_selection =1
+    output_selection =2
 
 else:
 
@@ -347,7 +345,7 @@ else:
     print("-------------------------------------------------------")
     print("             Step 3- Outputs selection")
     print("-------------------------------------------------------")
-    print("\nEnter desired output combination:\n\t1)Histogram\n\t2)Video (about 40min to generate)\n\t3)both")
+    print("\nEnter desired output combination:\n\t1)Histogram (about 30sec to generate)\n\t2)Video (about 40min to generate)")
     output_selection = int(input("Enter your selection:"))
 
 r= rims(ion_selection, potential_profile, flash_frequency, flash_mode, dc)
@@ -357,10 +355,7 @@ if output_selection==1:
 elif output_selection==2:
     r.create_video()
     generate_video_from_frames(r.path_for_output + 'frames', 'clip.avi')
-else:
-    r.create_video()
-    generate_video_from_frames(r.path_for_output + 'frames', 'clip.avi')
-    r.create_histogram()
+
 
         
 

@@ -54,7 +54,6 @@ def generate_video_from_frames(path_to_frames, title):
 def generate_video(path_to_frames, title):
     image_folder = '.'  # make sure to use your folder
     video_name = title
-    #os.chdir(path_to_frames)
 
     images = [img for img in os.listdir(image_folder)
               if img.endswith(".jpg") or

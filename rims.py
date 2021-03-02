@@ -38,6 +38,8 @@ import sys
 
 ION_LIST = ["Lead Pb+2", "Potassium K+", "Calcium Ca+2", "Sodium Na+", "Electron in Silicone"]
 FLASHING_MODES = [0,-0.5]
+BLANK_INT = 'blank'
+NUMBER_OF_SIMULATIONS = 10000
 
 
 '''----------------------------------------------------------------------
@@ -52,7 +54,7 @@ class rims:
         self.flash_frequency = flash_frequency
         self.flash_mode = flash_mode
         self.dc = dc
-        self.number_of_simulations = 10000
+        self.number_of_simulations = NUMBER_OF_SIMULATIONS
         self.start_time = datetime.now()
         self.path_for_output = 'RIMS output plots\\'+str(self.start_time.strftime("%x")).replace('/','-')+'_'+ str(self.start_time.strftime("%X")).replace(':','')+'\\'
 
@@ -250,6 +252,27 @@ class rims:
 
         f.close()
 
+def input_check_int(msg, range):
+    val = BLANK_INT
+    while val not in range:
+        try:
+            val = int(input(msg))
+        except ValueError:
+            print("\tPlease enter an integer as specified above")
+            continue
+    return val
+
+def input_check_float(msg):
+    val = BLANK_INT
+    clear = False
+    while not clear:
+        try:
+            val = float(input(msg))
+            clear = True
+        except ValueError:
+            print("\tPlease enter an integer or a float as specified above")
+            continue
+    return val
 
 '''----------------------------------------------------------------------
                                EXECUTION
@@ -273,9 +296,14 @@ print("\t3) Calcium Ca+2")
 print("\t4) Sodium Na+")
 print("\t5) Electron in Silicone")
 print("\t6) debug")
-number_selection = int(input("Enter your selection:")) -1
+number_selection = input_check_int("Enter your selection:", range(1,7))
+# while number_selection not in range(7):
+#     try:
+#         number_selection = int(input("Enter your selection:")) -1
+#     except ValueError:
+#         continue
 
-if number_selection == 5:
+if number_selection == 6:
     ion_selection = ION_LIST[4]
     ratchet_number =2
     L = 0.8
@@ -286,11 +314,11 @@ if number_selection == 5:
     dc = 0.6
     flash_number = 1
     flash_mode = -0.5
-    output_selection =2
+    output_selection =1
 
 else:
 
-    ion_selection = ION_LIST[number_selection]
+    ion_selection = ION_LIST[number_selection-1]
 
     print("\nIon selected: "+ion_selection)
 
@@ -299,7 +327,13 @@ else:
     print("-------------------------------------------------------")
 
     print("\nEnter ratchet function:\n\t1)Saw wave\n\t2)Double Sin\n")
-    ratchet_number = int(input("Ratchet function = "))
+    ratchet_number = input_check_int("Ratchet function number = ", [1,2])
+    # ratchet_number = BLANK_INT
+    # while ratchet_number not in [1,2]:
+    #     try:
+    #         ratchet_number = int(input("Ratchet function = "))
+    #     except ValueError:
+    #         continue
     if ratchet_number ==1:
 
         print("Please describe the potential profile applied on the system.\n")
@@ -312,9 +346,10 @@ else:
         print("  \______/\____/               ")
         print("    a[um]   b[um]            \n")
 
-        a = float(input("\ta[um] = "))
-        b = float(input("\tb[um] = "))
-        A = float(input("\tA[v] = "))
+        #a = float(input("\ta[um] = "))
+        a = input_check_float("\ta[um] = ")
+        b = input_check_float("\tb[um] = ")
+        A = input_check_float("\tA[v] = ")
         potential_profile = [a, b, A, ratchet_number]
 
     else:
@@ -328,25 +363,48 @@ else:
         print("  \____________/               ")
         print("        L[um]                \n")
         print("qV(x) = a1 * sin(2pi * x / L) + a2 * sin(4pi * x / L)\n")
-        L = float(input("\tL[um] = "))
-        a1 = float(input("\ta1[v] = "))
-        a2 = float(input("\ta2[v] = "))
+        L = input_check_float("\tL[um] = ")
+        a1 = input_check_float("\ta1[v] = ")
+        a2 = input_check_float("\ta2[v] = ")
         potential_profile = [L, a1, a2, ratchet_number]
 
 
     print("\nEnter ratchet flashing frequency in Hz:")
-    flash_frequency = int(input("Ratchet frequency [Hz] = "))
+    flash_frequency = -1
+    tries =0
+    while flash_frequency <= 0:
+        if tries>0:
+            print("\tfrequency takes values larger than 1")
+        try:
+            flash_frequency = int(input("Ratchet frequency [Hz] = "))
+        except ValueError:
+            print("\tPlease enter an integer as specified above")
+            tries += 1
+            continue
+        tries+=1
+
     print("\nEnter ratchet duty cycle from 0-1:")
-    dc = float(input("DC = "))
+    dc = -1
+    tries =0
+    while dc < 0 or dc > 1:
+        if tries>0:
+            print("\tdc takes float values from (0-1)")
+        try:
+            dc = float(input("DC = "))
+        except ValueError:
+            tries += 1
+            continue
+        tries+=1
+
     print("\nEnter flashing mode number:\n\t1)ON/OFF\n\t2)+/-\n")
-    flash_number = int(input("Flashing mode = ")) -1
-    flash_mode = FLASHING_MODES[flash_number]
+    flash_number = input_check_int("Flashing mode = ",[1,2])
+    flash_mode = FLASHING_MODES[flash_number-1]
 
     print("-------------------------------------------------------")
     print("             Step 3- Outputs selection")
     print("-------------------------------------------------------")
     print("\nEnter desired output combination:\n\t1)Histogram (about 30sec to generate)\n\t2)Video (about 40min to generate)")
-    output_selection = int(input("Enter your selection:"))
+    output_selection = input_check_int("Enter your selection:",[1,2])
 
 r= rims(ion_selection, potential_profile, flash_frequency, flash_mode, dc)
 r.electric_field()
@@ -354,7 +412,7 @@ if output_selection==1:
     r.create_histogram()
 elif output_selection==2:
     r.create_video()
-    generate_video_from_frames(r.path_for_output + 'frames', 'clip.avi')
+    generate_video_from_frames(r.path_for_output + 'frames', 'density over time.avi')
 
 
         

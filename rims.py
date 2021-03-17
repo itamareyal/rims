@@ -37,7 +37,8 @@ import sys
 
 
 ION_LIST = ["Lead Pb+2", "Potassium K+", "Calcium Ca+2", "Sodium Na+", "Electron in Silicone"]
-FLASHING_MODES = [0,-0.5]
+ALPHA = 0.5                             # amplitude factor for negative period of flashing ratchet
+FLASHING_MODES = [0,-ALPHA]
 BLANK_INT = 'blank'
 NUMBER_OF_SIMULATIONS = 10000
 
@@ -150,7 +151,7 @@ class rims:
         print("\nSimulation finished after " + str(datetime.now() - self.start_time) + "\n")
         self.create_log_file(ion_subject)
         print("Simulation log file created and saved.\n")
-        print("Plotting results...\nClose the plots to continue")
+        #print("Plotting results...\nClose the plots to continue")
         plt.figure(1)
         weights = np.ones_like(x_results)/float(len(x_results))
         plt.hist(x_results, weights=weights, bins=RESOLUTION, label=r"X [$\mu $m]")
@@ -164,7 +165,7 @@ class rims:
         plt.xlabel(r'X [$\mu $m]')
         plt.title(r"Histogram of distribution x axis: $\rho $(x)")
         self.save_plots('Distribution x axis histogram',1)
-        plt.show()
+        #plt.show()
 
 
     def create_video(self):
@@ -273,6 +274,12 @@ def input_check_float(msg):
             print("\tPlease enter an integer or a float as specified above")
             continue
     return val
+
+def print_log_file(rims_object):
+    f = open(rims_object.path_for_output+"RIMS simulation log.txt", "r")
+    log = f.read()
+    print(log)
+    f.close()
 
 '''----------------------------------------------------------------------
                                EXECUTION
@@ -432,6 +439,8 @@ def execution():
     elif output_selection==2:
         r.create_video()
         generate_video_from_frames(r.path_for_output + 'frames', 'density over time.avi')
+
+    print_log_file(r)
 
     print("\n-------------------------------------------------------")
     print("                 Simulation over")

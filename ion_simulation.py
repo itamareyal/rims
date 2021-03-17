@@ -30,6 +30,8 @@ BOLTZMANN_CONSTANT = 8.617333262 * pow(10,-5)
 AVOGADRO_NUMBER = 6.0221409 * pow(np.e,23)
 TEMPERATURE = 298
 RESOLUTION = 1000
+RATCHETS_IN_SYSTEM = 4
+POINTS = 300
 
 '''----------------------------------------------------------------------
                             IMPLEMENTATIONS
@@ -58,7 +60,7 @@ class ion:
         self.x0= self.loc
 
         self.intervals_count = 0
-        self.points = 100
+        self.points = POINTS
         self.arena_count = 0
         self.path = path
 
@@ -161,5 +163,12 @@ class ion:
             self.loc = new_x
             self.intervals_count += 1
 
-        return self.L * self.arena_count + new_x
+        ret_val = self.L * self.arena_count + new_x
+
+        # keeping final location in range [0, num of ratchets times arena size] to get steady state
+        while ret_val > RATCHETS_IN_SYSTEM * self.L:
+            ret_val -= RATCHETS_IN_SYSTEM * self.L
+        while ret_val < 0:
+            ret_val += RATCHETS_IN_SYSTEM * self.L
+        return ret_val
 

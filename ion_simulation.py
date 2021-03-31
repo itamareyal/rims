@@ -28,7 +28,7 @@ diffusion_coefficient_dict = {
 INTERVALS_FLASH_RATIO = 10
 BOLTZMANN_CONSTANT = 8.617333262 * pow(10,-5)
 AVOGADRO_NUMBER = 6.0221409 * pow(np.e,23)
-TEMPERATURE = 298
+TEMPERATURE = 293
 RESOLUTION = 1000
 RATCHETS_IN_SYSTEM = 4
 POINTS = 300
@@ -38,7 +38,7 @@ POINTS = 300
 ----------------------------------------------------------------------'''
 
 class ion:
-    def __init__(self, ion, potential_profile, flash_frequency, flash_mode, dc, E, V, path):
+    def __init__(self, ion, potential_profile, flash_frequency, flash_mode, dc, E, V, path): ##Add T if necessary
 
         self.ion = ion
         self.diffusion = diffusion_coefficient_dict[ion]
@@ -46,6 +46,7 @@ class ion:
 
         self.electric_field = E
         self.potential_profile = V
+        self.velocity = 0
 
         self.flash_frequency = flash_frequency
         self.flash_period = 1 / flash_frequency
@@ -170,5 +171,6 @@ class ion:
             ret_val -= RATCHETS_IN_SYSTEM * self.L
         while ret_val < 0:
             ret_val += RATCHETS_IN_SYSTEM * self.L
+            #calculate group number
         return ret_val
 

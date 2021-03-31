@@ -25,6 +25,7 @@ Tel-Aviv university
 import scipy.stats as st
 from datetime import datetime
 from ion_simulation import *
+from current_calc import *
 from video_gen import *
 import numpy as np
 import matplotlib.pyplot as plt
@@ -38,10 +39,12 @@ import sys
 
 ION_LIST = ["Lead Pb+2", "Potassium K+", "Calcium Ca+2", "Sodium Na+", "Electron in Silicone"]
 ALPHA = 0.5                             # amplitude factor for negative period of flashing ratchet
-FLASHING_MODES = [0,-ALPHA]
+FLASHING_MODES = [0, -ALPHA]
 BLANK_INT = 'blank'
 NUMBER_OF_SIMULATIONS = 10000
-
+ELECTRON_CHARGE = 1.6 * pow(10, -19)
+SIGMA = (500 * pow(10, -6)) * (50 * pow(10, -9))
+NE = 1 * pow (10, 21)
 
 '''----------------------------------------------------------------------
                             IMPLEMENTATION
@@ -51,6 +54,7 @@ NUMBER_OF_SIMULATIONS = 10000
 class rims:
     def __init__(self, ion, potential_profile, flash_frequency, flash_mode, dc):
         self.ion = ion
+        self.current = 0
         self.potential_profile_list = potential_profile
         self.flash_frequency = flash_frequency
         self.flash_mode = flash_mode
@@ -61,7 +65,7 @@ class rims:
 
 
     def create_ion(self):
-        i = ion(self.ion, self.potential_profile_list, self.flash_frequency, self.flash_mode, self.dc, self.electric_field, self.potential_profile, self.path_for_output)
+        i = ion(self.ion, self.potential_profile_list, self.flash_frequency, self.flash_mode, self.dc, self.electric_field, self.potential_profile, self.path_for_output) #Add self.temperature if necessary
         i.create_arena()
         i.get_intervals()
         i.get_gamma()
@@ -135,6 +139,7 @@ class rims:
         x_results = []
         simulation_count =0
         ion_subject = self.create_ion()
+        period = 1 / self.flash_frequency
 
         self.create_trace_file(ion_subject)
 
@@ -146,7 +151,15 @@ class rims:
             sys.stdout.write("\r%d%%" % prog)
             sys.stdout.flush()
             self.write_to_trace_file(ion_subject)
+            #check SS function
 
+        a1_fixed = self.potential_profile_list[1] * ELECTRON_CHARGE
+        a2_fixed = self.potential_profile_list[2] * ELECTRON_CHARGE
+        L_fixed = self.potential_profile_list[0] * pow(10, -6)
+        diffusion_fixed = ion_subject.diffusion * pow(10, -9)
+        alpha_fixed = self.flash_mode
+        velocity = get_velocity(period, L_fixed, diffusion_fixed, a1_fixed, a2_fixed, alpha_fixed, TEMPERATURE, self.dc)
+        self.current = get_current(velocity, NE, SIGMA, ELECTRON_CHARGE)
 
         print("\nSimulation finished after " + str(datetime.now() - self.start_time) + "\n")
         self.create_log_file(ion_subject)
@@ -239,6 +252,7 @@ class rims:
         f.write("\tfrequency: " + str(ion_subject.flash_frequency) + "[Hz]\n")
         f.write("\tperiod: " + str(ion_subject.flash_period) + "[sec]\n")
         f.write("\tduty cycle: " + str(self.dc) +"\n")
+        # f.write("\ttemperature: " + str(self.temperature) +"[k]\n")
         if self.flash_mode == 0: #ON/OFF
             f.write("\tflash mode: ON/OFF\n")
         else:
@@ -250,6 +264,7 @@ class rims:
         f.write("\tintervals (delta_t): "+str(ion_subject.interval)+"e-6[sec]\n")
         f.write("\tfriction coefficient (gamma): " + str(ion_subject.gamma) + "\n")
         f.write("\tresolution: " + str(RESOLUTION) + "\n")
+        f.write("\tcurrent: " + str(self.current) + "[A]\n")
 
         f.close()
 
@@ -318,10 +333,11 @@ def execution():
         a2 = 0.05
         potential_profile = [L, a1, a2, ratchet_number]
         flash_frequency = 600000
-        dc = 0.6
+        dc = 0.2
+        # temperature = 293
         flash_number = 1
         flash_mode = -0.5
-        output_selection =1
+        output_selection = 1
 
     else:
 
@@ -413,9 +429,23 @@ def execution():
                 continue
             tries+=1
 
+        # print("\nEnter system temperature in Kelvin:")
+        # temperature = -1
+        # tries = 0
+        # while temperature < 0:
+        #     if tries > 0:
+        #         print("\ttemperature takes float values higher than 0")
+        #     try:
+        #         temperature = float(input("Temperature = "))
+        #     except ValueError:
+        #         tries += 1
+        #         continue
+        #     tries += 1
+
         print("\nEnter flashing mode number:\n\t1)ON/OFF\n\t2)+/-\n")
         flash_number = input_check_int("Flashing mode = ",[1,2])
         flash_mode = FLASHING_MODES[flash_number-1]
+
 
         print("-------------------------------------------------------")
         print("             Step 3- Outputs selection")
@@ -432,10 +462,10 @@ def execution():
         except NameError:
             print("Initial location of every ion is uniformly randomized over [0," + str(a+b) + "um]\n")
 
-    r= rims(ion_selection, potential_profile, flash_frequency, flash_mode, dc)
+    r = rims(ion_selection, potential_profile, flash_frequency, flash_mode, dc)
     r.electric_field()
     if output_selection==1:
-        r.create_histogram()
+        current = r.create_histogram()
     elif output_selection==2:
         r.create_video()
         generate_video_from_frames(r.path_for_output + 'frames', 'density over time.avi')

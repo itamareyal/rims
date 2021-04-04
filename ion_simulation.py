@@ -8,40 +8,20 @@ Calculates the location of an ion for every time interval.
                                 IMPORTS
 ----------------------------------------------------------------------'''
 
-import numpy as np
 import random
-import csv
+from defines import *
 
-
-'''----------------------------------------------------------------------
-                                DEFINES
-----------------------------------------------------------------------'''
-diffusion_coefficient_dict = {
-    # Deff dictionary. [m^2/sec]
-    "Lead Pb+2"             : 0.945,
-    "Potassium K+"          : 1.960,
-    "Calcium Ca+2"          : 0.793,
-    "Sodium Na+"            : 1.330,
-    "Electron in Silicone"  : 0.0036
-}
-
-INTERVALS_FLASH_RATIO = 10
-BOLTZMANN_CONSTANT = 8.617333262 * pow(10,-5)
-AVOGADRO_NUMBER = 6.0221409 * pow(np.e,23)
-TEMPERATURE = 293
-RESOLUTION = 1000
-RATCHETS_IN_SYSTEM = 4
-POINTS = 300
 
 '''----------------------------------------------------------------------
                             IMPLEMENTATIONS
 ----------------------------------------------------------------------'''
 
 class ion:
-    def __init__(self, ion, potential_profile, flash_frequency, flash_mode, dc, E, V, path): ##Add T if necessary
+    def __init__(self, ion, potential_profile, flash_frequency, flash_mode, dc, E, V, path):
 
         self.ion = ion
         self.diffusion = diffusion_coefficient_dict[ion]
+        #self.diffusion = np.random.normal(2.5 * pow(10,-4), 2 * pow(10,-4))
         self.potential_profile_list= potential_profile
 
         self.electric_field = E
@@ -92,10 +72,10 @@ class ion:
 
 
     def create_arena(self):
-        # Description: Creates the potential profile V(x) over one period. for plotting.
-        # Parameters: self
-        # Return: saves the arena as attribute self.arena
-
+        """
+        Creates the potential profile V(x) over one period. for plotting.
+        saves the arena as attribute self.arena
+        """
         if self.potential_profile_list[3] == 2: #sin
             L = self.potential_profile_list[0]
             a1 = self.potential_profile_list[1]
@@ -116,22 +96,22 @@ class ion:
 
 
     def ratchet_mode(self):
-        # Description: checks if the ratchet is on or off (or negative).
-        # Parameters: self
-        # Return: 1 for on, 0 for off, -1 for negative.
-
+        """
+        checks if the ratchet is on or off (or negative).
+        :return: 1 for on, 0 for off, -1 for negative.
+        """
         t_prime = np.mod(self.intervals_count * self.interval ,self.flash_period)
         if t_prime < self.dc * self.flash_period:
-            return 1
-        else:
             return self.flash_mode
+        else:
+            return 1
 
 
     def get_new_x(self):
-        # Description: calculate location for next iteration, update to arena count.
-        # Parameters: self
-        # Return: new location of the ion.
-
+        """
+        calculate location for next iteration, update to arena count.
+        :return: new location of the ion.
+        """
         xt = self.loc
         noise = self.noise()
         fe = self.electric_force(xt)
@@ -149,10 +129,10 @@ class ion:
 
 
     def simulate_ion(self):
-        # Description: simulate ion movement over number of iterations.
-        # Parameters: self
-        # Return: location of the ion at the nd of the simulation.
-
+        """
+        simulate ion movement over number of iterations.
+        :return: location of the ion at the nd of the simulation.
+        """
         ion.get_intervals(self)
         ion.get_gamma(self)
         ion.create_arena(self)

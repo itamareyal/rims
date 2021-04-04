@@ -1,8 +1,8 @@
-'''
+"""
 video_gen.py
 
 generates a video from a collection of output histogram over time.
-'''
+"""
 
 '''----------------------------------------------------------------------
                                 IMPORTS
@@ -17,13 +17,12 @@ from PIL import Image
                             IMPLEMENTATIONS
 ----------------------------------------------------------------------'''
 
-
 def generate_video_from_frames(path_to_frames, title):
-    # Description: Resize imgs to fit video.
-    # Parameters: path_to_frames: location of all histograms to become the video
-    #             title: name of the video created
-    # Return: calls the video generation function.
-
+    """
+    Resize imgs to fit video. calls the video generation function.
+    :param path_to_frames: folder containing all histogram figures
+    :param title: name of video file to be generated
+    """
     os.chdir(path_to_frames)
     mean_height = 0
     mean_width = 0
@@ -40,14 +39,12 @@ def generate_video_from_frames(path_to_frames, title):
 
     for file in os.listdir('.'):
         if file.endswith(".jpg") or file.endswith(".jpeg") or file.endswith("png") or file.endswith("JPEG"):
-            # opening image using PIL Image
             im = Image.open(file)
 
             # resizing
             imResize = im.resize((mean_width, mean_height), Image.ANTIALIAS)
             imResize.save(file, 'JPEG', quality=95)
 
-    # Calling the generate_video function
     generate_video(path_to_frames, title)
 
 
@@ -62,14 +59,11 @@ def generate_video(path_to_frames, title):
               img.endswith("png")]
 
     images = sorted(images, key=sort_by_title)
-    # Array images should only consider
-    # the image files ignoring others if any
     print("Video saved to "+path_to_frames + " as "+title)
 
     frame = cv2.imread(os.path.join(image_folder, images[0]))
 
     # setting the frame width, height width
-    # the width, height of first image
     height, width, layers = frame.shape
 
     video = cv2.VideoWriter(video_name, 0, 5, (width, height))
@@ -78,7 +72,7 @@ def generate_video(path_to_frames, title):
     for image in images:
         video.write(cv2.imread(os.path.join(image_folder, image)))
 
-        # Deallocating memories taken for window creation
+        # De-allocating memories taken for window creation
     cv2.destroyAllWindows()
     video.release()  # releasing the video generated
 

@@ -1,8 +1,19 @@
+"""
+current_clac.py
+
+Calculates velocity of particles and derives the current.
+"""
+
+'''----------------------------------------------------------------------
+                                IMPORTS
+----------------------------------------------------------------------'''
+
+from defines import *
 
 
-BOLTZMANN_CONSTANT_J = 1.380649 * pow(10,-23)
-
-import numpy as np
+'''----------------------------------------------------------------------
+                            IMPLEMENTATION
+----------------------------------------------------------------------'''
 
 def beta(temperature):
     beta = 1/(temperature * BOLTZMANN_CONSTANT_J)
@@ -22,12 +33,14 @@ def B(x, y, n, m):
     B = num1 * num2 / denom
     return B
 
+
 def C(x, y):
     C = 0
     n = 20
     for i in range(n):
         C += A(x, y, i)
     return C
+
 
 def D(x, y):
     D = 0
@@ -43,20 +56,23 @@ def D(x, y):
     for k in range(n):
         k_fixed = k + 1
         D += B(x, y, k_fixed, 1)
-
     return D
+
 
 def G(x,y, delta):
     G = (1 - (2 * delta)) * C(x, y) - ((1 / (2 * np.pi))) * D(x, y)
     return G
 
+
 def phi_1(xi, delta, x, y):
     phi_1 = (12 / (np.pi ** 2)) * x * C(x, y)
     return phi_1
 
+
 def phi_2(xi, delta, x, y):
     phi_2 = (12 / (np.pi ** 2)) * x * G(x, y, delta)
     return phi_2
+
 
 def get_velocity(period, L, diffusion, a1, a2, alpha, temperature, dc):
     xi = ((L/(2 * np.pi)) ** 2) / (diffusion * period)
@@ -70,6 +86,7 @@ def get_velocity(period, L, diffusion, a1, a2, alpha, temperature, dc):
     denom = (4 * L)
     velocity = (num1 * num2) / (denom)
     return velocity
+
 
 def get_current(velocity, ne, sigma, q):
     current = velocity * ne * sigma * q

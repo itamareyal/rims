@@ -1,0 +1,25 @@
+RIMS simulation log
+
+	time created: 2021-04-08 11:31:10.530285
+	test duration: 0:01:14.679468
+
+	particles in the system: Electron in Silicone
+	diffusion coefficient: 0.00025[m^2/cm] /10^-9
+	temperature: 293[k]
+
+Ratchet potential profile
+	function: double sin wave 
+	amplitude: 0.3[V]
+	width: 0.8[um]
+	frequency: 600000[Hz]
+	period: 1.6666666666666667e-06[sec]
+	duty cycle: 0.4
+	flash mode: + / -
+
+Simulation settings
+	particles simulated: 10000
+	measurements per particle: 300
+	intervals (delta_t): 12.800000000000006e-6[sec]
+	friction coefficient (gamma): 100.99514583064003
+	resolution: 1000
+	current: nan[A]

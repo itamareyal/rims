@@ -107,8 +107,9 @@ class rims:
         print("\nRIMS simulation in progress...")
 
         x_results = []
+        v_results = []
         simulation_count = 0
-        ion_subject = self.create_ion()
+        ion_subject = self.create_ion()     ##unecessary?
         period = 1 / self.flash_frequency
         create_trace_file(self, ion_subject)
 
@@ -116,6 +117,7 @@ class rims:
         while simulation_count < self.number_of_simulations:
             ion_subject = self.create_ion()
             x_results.append(ion_subject.simulate_ion())
+            v_results.append(ion_subject.velocity_list[-1:])
             simulation_count += 1
             prog = simulation_count * 100 / int(self.number_of_simulations)
             sys.stdout.write("\r%d%%" % prog)
@@ -130,8 +132,11 @@ class rims:
         diffusion = ion_subject.diffusion
         alpha = self.flash_mode
         dc = self.dc
-        velocity = get_velocity(period, L, diffusion, a1, a2, alpha, TEMPERATURE, dc)
-        self.current = get_current(velocity, NE, SIGMA, ELECTRON_CHARGE)
+        #velocity = get_velocity(period, L, diffusion, a1, a2, alpha, TEMPERATURE, dc)
+        velocity_array = np.array(v_results)
+        print(velocity_array)
+        average_velocity = np.average(velocity_array)
+        self.current = get_current(average_velocity, NE, SIGMA, ELECTRON_CHARGE)
 
         print("\nSimulation finished after " + str(datetime.now() - self.start_time) + "\n")
         create_log_file(self, ion_subject)
@@ -236,8 +241,8 @@ def execution(dc_sample):
     print("\t4) Sodium Na+")
     print("\t5) Electron in Silicone")
     print("\t6) debug")
-    #number_selection = input_check_int("Enter your selection:", range(1,7))
-    number_selection = 6
+    number_selection = input_check_int("Enter your selection:", range(1,7))
+    #number_selection = 6
 
     if number_selection == 6:
         ion_selection = ION_LIST[4]

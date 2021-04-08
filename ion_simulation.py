@@ -10,7 +10,7 @@ Calculates the location of an ion for every time interval.
 
 import random
 from defines import *
-
+from current_calc import *
 
 '''----------------------------------------------------------------------
                             IMPLEMENTATIONS
@@ -26,7 +26,7 @@ class ion:
 
         self.electric_field = E
         self.potential_profile = V
-        self.velocity = 0
+        self.velocity_list = []
 
         self.flash_frequency = flash_frequency
         self.flash_period = 1 / flash_frequency
@@ -49,11 +49,24 @@ class ion:
         self.arena = -1
         self.potential_profile = -1
         self.interval = -1
+        self.num_of_intervals_for_current = -1
         self.gamma = -1
 
 
     def get_intervals(self):
-        self.interval = ((1 / INTERVALS_FLASH_RATIO) * self.L) ** 2 /(2 *self.diffusion)
+        self.interval = ((1 / INTERVALS_FLASH_RATIO) * self.L) ** 2 /(2 *self.diffusion)  # * (pow(10, -12)) / (2 * pow(10, -9)
+
+
+    def get_num_of_intervals_for_current(self):
+        self.num_of_intervals_for_current = int(self.flash_period/(self.interval * (pow(10, -8))))
+
+
+    def calculate_velocity(self, v_list):
+        n = self.num_of_intervals_for_current
+        v_array = v_list[-n:]
+        np.array(v_array)
+        v = np.average(v_array)
+        self.velocity_list.append(v)
 
 
     def get_gamma(self):
@@ -134,15 +147,22 @@ class ion:
         :return: location of the ion at the nd of the simulation.
         """
         ion.get_intervals(self)
+        ion.get_num_of_intervals_for_current(self)
         ion.get_gamma(self)
         ion.create_arena(self)
 
         new_x =0
+        v_list = []
         while self.intervals_count <= self.points:
-
+            prev_arena = self.arena_count
             new_x = ion.get_new_x(self)
+            area_passed = self.arena_count - prev_arena
+            v_list.append(calculate_v(new_x, self.loc, self.interval))
             self.loc = new_x
             self.intervals_count += 1
+            if (self.intervals_count % self.num_of_intervals_for_current) == 0:
+                ion.calculate_velocity(self, v_list)
+
 
         ret_val = self.L * self.arena_count + new_x
 

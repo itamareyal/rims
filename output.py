@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import os
 import csv
+import sys
 from defines import *
 
 
@@ -21,12 +22,16 @@ from defines import *
 
 
 def create_trace_file(rims_object, ion_subject):
+    if not os.path.exists(rims_object.path_for_output):
+        os.makedirs(rims_object.path_for_output)
     with open(rims_object.path_for_output + 'simulation trace.csv', newline='', mode='a') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(['X0[cm]', 'X' + str(ion_subject.points) + '[cm]'])
 
 
 def write_to_trace_file(rims_object, ion_subject):
+    if not os.path.exists(rims_object.path_for_output):
+        os.makedirs(rims_object.path_for_output)
     with open(rims_object.path_for_output + 'simulation trace.csv', newline='', mode='a') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow([ion_subject.x0, ion_subject.L * ion_subject.arena_count + ion_subject.loc])
@@ -41,7 +46,7 @@ def create_log_file(rims_object, ion_subject):
     f.write("\ttest duration: " + str(datetime.now() - rims_object.start_time) + "\n")
 
     f.write("\n\tparticles in the system: " + rims_object.ion + "\n")
-    f.write("\tdiffusion coefficient: " + str(ion_subject.diffusion) + "[m^2/cm] /10^-9\n")
+    f.write("\tdiffusion coefficient: " + str(ion_subject.diffusion) + "[cm^2/sec]\n")
     f.write("\ttemperature: " + str(TEMPERATURE) + "[k]\n")
 
     f.write("\nRatchet potential profile\n")
@@ -53,7 +58,7 @@ def create_log_file(rims_object, ion_subject):
     else:  # saw
         f.write("\tfunction: saw wave \n")
         f.write("\tamplitude: " + str(rims_object.potential_profile_list[1]) + "[V]\n")
-    f.write("\twidth: " + str(ion_subject.L) + "[cm]\n")
+    f.write("\twidth: " + str(ion_subject.L * pow(10, 4)) + "[um]\n")
     f.write("\tfrequency: " + str(ion_subject.flash_frequency) + "[Hz]\n")
     f.write("\tperiod: " + str(ion_subject.flash_period) + "[sec]\n")
     f.write("\tduty cycle: " + str(rims_object.dc) + "\n")
@@ -146,6 +151,12 @@ def create_unique_id():
     c_time = now.ctime()
     uid = c_time.replace(':', '').replace(' ', '_')
     return uid
+
+
+def percentage_progress(n, N):
+    progress = n * 100 / int(N)
+    sys.stdout.write("\r%d%%" % progress)
+    sys.stdout.flush()
 
 
 def heatmap(data, row_labels, col_labels, ax=None,

@@ -21,7 +21,6 @@ class ion:
 
         self.ion = ion
         self.diffusion = diffusion_coefficient_dict[ion]
-        #self.diffusion = np.random.normal(2.5 * pow(10,-4), 2 * pow(10,-4))
         self.potential_profile_list= potential_profile
 
         self.electric_field = E
@@ -33,11 +32,11 @@ class ion:
         self.flash_mode = flash_mode
         self.dc = dc
 
-        if potential_profile[3] == 2: #sin
+        if potential_profile[3] == 2:       # sin
             self.L = potential_profile[0]
         else:
             self.L = potential_profile[0] + potential_profile[1]
-        self.loc = random.uniform(0,self.L)
+        self.loc = random.uniform(0, self.L)
         self.x0= self.loc
 
         self.intervals_count = 0
@@ -50,62 +49,56 @@ class ion:
         self.potential_profile = -1
         self.interval = -1
         self.gamma = -1
-
+        self.vi = -1
 
     def get_intervals(self):
-        self.interval = ((1 / INTERVALS_FLASH_RATIO) * self.L) ** 2 /(2 *self.diffusion)
-
+        self.interval = ((1 / INTERVALS_FLASH_RATIO) * self.L) ** 2 / (2 * self.diffusion)
 
     def get_gamma(self):
         self.gamma = BOLTZMANN_CONSTANT * TEMPERATURE / self.diffusion
 
-
     def electric_force(self, x):
         index_in_array = int(x * RESOLUTION / self.L)
         electric_field = self.electric_field[index_in_array]
-        return  self.gamma * electric_field * self.ratchet_mode()
-
+        return self.gamma * electric_field * self.ratchet_mode()
 
     def noise(self):
         ksai = np.random.normal(0, 1)
-        return np.multiply(ksai,np.sqrt(2 * self.diffusion * self.interval))
-
+        return np.multiply(ksai, np.sqrt(2 * self.diffusion * self.interval))
 
     def create_arena(self):
         """
         Creates the potential profile V(x) over one period. for plotting.
         saves the arena as attribute self.arena
         """
-        if self.potential_profile_list[3] == 2: #sin
+        if self.potential_profile_list[3] == 2:         # sin
             L = self.potential_profile_list[0]
             a1 = self.potential_profile_list[1]
             a2 = self.potential_profile_list[2]
             x = np.linspace(0, L)
             self.arena = a1 * np.sin(2 * np.pi * x / L) + a2 * np.sin(4 * np.pi * x / L)
 
-        else: #saw
+        else:                                           # saw
             a = self.potential_profile_list[0]
             b = self.potential_profile_list[1]
             A = self.potential_profile_list[2]
             x = np.linspace(0, a+b)
-            f1=A * np.divide(x,a)
-            f2=A * np.divide((x-(a+b)),(-b))
-            step = 0.5*(np.sign(x-a) +1)
-            f=  f1 -step*f1 + step* f2
+            f1 = A * np.divide(x, a)
+            f2 = A * np.divide((x-(a+b)), (-b))
+            step = 0.5*(np.sign(x-a) + 1)
+            f = f1 - step * f1 + step * f2
             self.arena = f
-
 
     def ratchet_mode(self):
         """
         checks if the ratchet is on or off (or negative).
         :return: 1 for on, 0 for off, -1 for negative.
         """
-        t_prime = np.mod(self.intervals_count * self.interval ,self.flash_period)
+        t_prime = np.mod(self.intervals_count * self.interval, self.flash_period)
         if t_prime < self.dc * self.flash_period:
-            return self.flash_mode
-        else:
             return 1
-
+        else:
+            return self.flash_mode
 
     def get_new_x(self):
         """
@@ -127,7 +120,6 @@ class ion:
 
         return new_x
 
-
     def simulate_ion(self):
         """
         simulate ion movement over number of iterations.
@@ -137,20 +129,30 @@ class ion:
         ion.get_gamma(self)
         ion.create_arena(self)
 
-        new_x =0
+        new_x = 0
+        steady_state = False
+        dummy_ss = int(0.9 * self.points)
+        vi_list = []
+
         while self.intervals_count <= self.points:
 
+            prev_loc = self.arena_count * self.L + self.loc
             new_x = ion.get_new_x(self)
             self.loc = new_x
+            if self.intervals_count > dummy_ss:
+                vi = (new_x * self.arena_count * self.L - prev_loc) / self.interval
+                vi_list.append(vi)
             self.intervals_count += 1
 
+        vi_vector = np.array(vi_list)
+        self.vi = np.average(vi_vector)
         ret_val = self.L * self.arena_count + new_x
 
         # keeping final location in range [0, num of ratchets times arena size] to get steady state
-        while ret_val > RATCHETS_IN_SYSTEM * self.L:
-            ret_val -= RATCHETS_IN_SYSTEM * self.L
-        while ret_val < 0:
-            ret_val += RATCHETS_IN_SYSTEM * self.L
-            #calculate group number
+        # while ret_val > RATCHETS_IN_SYSTEM * self.L:
+        #     ret_val -= RATCHETS_IN_SYSTEM * self.L
+        # while ret_val < 0:
+        #     ret_val += RATCHETS_IN_SYSTEM * self.L
+        # calculate group number
         return ret_val
 

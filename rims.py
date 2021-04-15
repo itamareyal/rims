@@ -33,17 +33,18 @@ from defines import *
                             IMPLEMENTATION
 ----------------------------------------------------------------------'''
 
+
 class rims:
-    def __init__(self, ion, potential_profile, flash_frequency, flash_mode, dc):
+    def __init__(self, ion_subject, potential_profile, flash_frequency, flash_mode, dc):
         """
         Instance holding attributes of the whole simulation
-        :param ion: ion type to be simulated
+        :param ion_subject: ion type to be simulated
         :param potential_profile: list holding potential profile shape [L,a1,a2]
         :param flash_frequency: flashing rate of the ratchet
         :param flash_mode: determines the profile when in 1-dc. Either completely off or negative and amp by ALPHA
         :param dc: duty cycle of positive part of the potential profile
         """
-        self.ion = ion
+        self.ion = ion_subject
         self.current = 0
         self.electric_field = 0
         self.potential_profile = 0
@@ -53,8 +54,7 @@ class rims:
         self.dc = dc
         self.number_of_simulations = NUMBER_OF_SIMULATIONS
         self.start_time = datetime.now()
-        self.path_for_output = 'RIMS output plots\\'+str(self.start_time.strftime("%x")).replace('/','-')+'_'+ str(self.start_time.strftime("%X")).replace(':','')+'\\'
-
+        self.path_for_output = r'RIMS output plots/' + get_time_stamp(self) + r'/'
 
     def create_ion(self):
         """
@@ -67,37 +67,35 @@ class rims:
         i.get_gamma()
         return i
 
-
     def get_electric_field(self):
         """
         Derives the electric field from the potential, E(x).
         saves E(x) as attribute self.electric field and V(x) as self.potential_profile.
         """
-        if self.potential_profile_list[3] == 2:     #sin
+        if self.potential_profile_list[3] == 2:     # sin
             L = self.potential_profile_list[0]      # profile length x axis [um]
             a1 = self.potential_profile_list[1]     # amp of first sin wave [V]
             a2 = self.potential_profile_list[2]     # amp of second sin wave [V]
             x = np.linspace(0, L, num=RESOLUTION)
             V = a1 * np.sin(2*np.pi *x / L) + a2 * np.sin(4*np.pi *x / L)
 
-        else:                                       #saw
+        else:                                       # saw
             a = self.potential_profile_list[0]      # narrow left part of saw [um]
             b = self.potential_profile_list[1]      # thick right part of saw [um]
             A = self.potential_profile_list[2]      # amp of saw wave [V]
-            x = np.linspace(0,a+b, num=RESOLUTION)
-            f1=A * np.divide(x,a)
-            f2=A * np.divide((x-(a+b)),(-b))
-            step = np.heaviside(x-a,1)
-            V=  f1 -step*f1 + step* f2
+            x = np.linspace(0, a+b, num=RESOLUTION)
+            f1 = A * np.divide(x, a)
+            f2 = A * np.divide((x-(a+b)), (-b))
+            step = np.heaviside(x-a, 1)
+            V = f1 - step * f1 + step * f2
 
-        E= -np.gradient(V,1)
+        E = -np.gradient(V, 0.001)
         self.electric_field = E
         self.potential_profile = V
 
         '''plot E & V'''
-        plot_potential_profile(self,x,V,E)
+        plot_potential_profile(self, x, V, E)
         return
-
 
     def create_histogram(self):
         """
@@ -109,29 +107,26 @@ class rims:
         x_results = []
         simulation_count = 0
         ion_subject = self.create_ion()
-        period = 1 / self.flash_frequency
         create_trace_file(self, ion_subject)
-
+        vt_list = []
+        # hops_list = []
         '''main simulation loop'''
         while simulation_count < self.number_of_simulations:
             ion_subject = self.create_ion()
             x_results.append(ion_subject.simulate_ion())
+            vt_list.append(ion_subject.vi)
+
             simulation_count += 1
-            prog = simulation_count * 100 / int(self.number_of_simulations)
-            sys.stdout.write("\r%d%%" % prog)
+            progress = simulation_count * 100 / int(self.number_of_simulations)
+            sys.stdout.write("\r%d%%" % progress)
             sys.stdout.flush()
             write_to_trace_file(self, ion_subject)
-            # check SS function
 
         '''calculation of particles velocity and current at steady state'''
-        a1 = self.potential_profile_list[1] * ELECTRON_CHARGE
-        a2 = self.potential_profile_list[2] * ELECTRON_CHARGE
-        L = self.potential_profile_list[0] * pow(10, -6)
-        diffusion = ion_subject.diffusion
-        alpha = self.flash_mode
-        dc = self.dc
-        velocity = get_velocity(period, L, diffusion, a1, a2, alpha, TEMPERATURE, dc)
-        self.current = get_current(velocity, NE, SIGMA, ELECTRON_CHARGE)
+        vt_vector = np.array(vt_list)
+        vt_av = np.average(vt_vector)
+        vt_over_T = vt_av * ion_subject.interval * self.flash_frequency
+        self.current = get_current(-vt_over_T, NE, SIGMA, ELECTRON_CHARGE)
 
         print("\nSimulation finished after " + str(datetime.now() - self.start_time) + "\n")
         create_log_file(self, ion_subject)
@@ -147,7 +142,6 @@ class rims:
         plt.title(r"Histogram of distribution x axis: $\rho $(x)")
         save_plots(self, 'Distribution x axis histogram', plot_id)
         return
-
 
     def create_video(self):
         print("\nRIMS simulation in progress...")
@@ -168,6 +162,7 @@ class rims:
                 ion_subject = self.create_ion()
                 ion_subject.points = frame
                 x_results.append(ion_subject.simulate_ion())
+
                 simulation_count += 1
 
                 prog = simulation_count * 100 / int(self.number_of_simulations)
@@ -175,6 +170,7 @@ class rims:
                 sys.stdout.flush()
 
                 write_to_trace_file(self, ion_subject)
+
             plt.figure(frame)
             weights = np.ones_like(x_results) / float(len(x_results))
             plt.hist(x_results, weights=weights, bins=RESOLUTION, label=r"X [$\mu $m]", range=(-5, 5))
@@ -215,6 +211,13 @@ def input_check_float(msg):
     return val
 
 
+def get_time_stamp(rims_object):
+    time_start = rims_object.start_time
+    ts = str(time_start.strftime("%x")).replace('/', '-')+'_' \
+        + str(rims_object.start_time.strftime("%X")).replace(':', '')
+    return ts
+
+
 '''----------------------------------------------------------------------
                                EXECUTION
 ----------------------------------------------------------------------'''
@@ -224,7 +227,9 @@ print("     RIMS - Ratchet based Ion Movement Simulator")
 print("-------------------------------------------------------")
 
 input("\npress ENTER to begin...\n")
-def execution(dc_sample):
+
+
+def execution(dc_sample, f_sample):
     print("-------------------------------------------------------")
     print("             Step 1- Configure the system")
     print("-------------------------------------------------------")
@@ -236,17 +241,17 @@ def execution(dc_sample):
     print("\t4) Sodium Na+")
     print("\t5) Electron in Silicone")
     print("\t6) debug")
-    #number_selection = input_check_int("Enter your selection:", range(1,7))
+    # number_selection = input_check_int("Enter your selection:", range(1,7))
     number_selection = 6
 
     if number_selection == 6:
         ion_selection = ION_LIST[4]
-        ratchet_number =2
-        L = 0.8
+        ratchet_number = 2
+        L = 0.8 * pow(10, -4)
         a1 = 0.25
         a2 = 0.05
         potential_profile = [L, a1, a2, ratchet_number]
-        flash_frequency = 600000
+        flash_frequency = f_sample
         dc = dc_sample
         flash_number = 1
         flash_mode = -0.5
@@ -278,6 +283,7 @@ def execution(dc_sample):
 
             a = input_check_float("\ta[um] = ")
             b = input_check_float("\tb[um] = ")
+            L = a + b
             A = input_check_float("\tA[v] = ")
             potential_profile = [a, b, A, ratchet_number]
 
@@ -299,14 +305,14 @@ def execution(dc_sample):
 
         print("\nEnter ratchet flashing frequency in Hz: (can use factors of K,M,G)")
         flash_frequency = -1
-        tries =0
+        tries = 0
         while flash_frequency <= 0:
             if tries>0:
                 print("\tfrequency takes values equal or larger than 1")
             try:
                 raw_input = input("Ratchet frequency [Hz] = ")
                 converted_to_int = raw_input
-                converted_to_int = converted_to_int.replace('k','').replace('K','').replace('M','').replace('G','')
+                converted_to_int = converted_to_int.replace('k', '').replace('K', '').replace('M', '').replace('G', '')
                 flash_frequency = int(converted_to_int)
                 if 'k' in raw_input or 'K' in raw_input:
                     flash_frequency *= 1000
@@ -319,45 +325,44 @@ def execution(dc_sample):
                 print("\tPlease enter an integer as specified above")
                 tries += 1
                 continue
-            tries+=1
+            tries += 1
 
         print("\nEnter ratchet duty cycle from 0-1:")
         dc = -1
-        tries =0
+        tries = 0
         while dc < 0 or dc > 1:
-            if tries>0:
+            if tries > 0:
                 print("\tdc takes float values from (0-1)")
             try:
                 dc = float(input("DC = "))
             except ValueError:
                 tries += 1
                 continue
-            tries+=1
+            tries += 1
 
         print("\nEnter flashing mode number:\n\t1)ON/OFF\n\t2)+/-\n")
-        flash_number = input_check_int("Flashing mode = ",[1,2])
+        flash_number = input_check_int("Flashing mode = ", [1, 2])
         flash_mode = FLASHING_MODES[flash_number-1]
 
         print("-------------------------------------------------------")
         print("             Step 3- Outputs selection")
         print("-------------------------------------------------------")
-        print("\nEnter desired output combination:\n\t1)Histogram (about 30sec to generate)\n\t2)Video (about 40min to generate)")
-        output_selection = input_check_int("Enter your selection:",[1,2])
+        print("\nEnter desired output combination:\n\t1)Histogram (about 30sec to generate)\n\t"
+              "2)Video (about 40min to generate)")
+        output_selection = input_check_int("Enter your selection:", [1, 2])
 
         print("\n-------------------------------------------------------")
         print("             Starting simulation")
         print("-------------------------------------------------------")
         print("\nBuilding Monte Carlo calculation system")
-        try:
-            print("Initial location of every ion is uniformly randomized over [0,"+str(L)+"um]\n")
-        except NameError:
-            print("Initial location of every ion is uniformly randomized over [0," + str(a+b) + "um]\n")
+
+        print("Initial location of every ion is uniformly randomized over [0," + str(L) + "cm]\n")
 
     r = rims(ion_selection, potential_profile, flash_frequency, flash_mode, dc)
     r.get_electric_field()
-    if output_selection==1:
+    if output_selection == 1:
         r.create_histogram()
-    elif output_selection==2:
+    elif output_selection == 2:
         r.create_video()
         generate_video_from_frames(r.path_for_output + 'frames', 'density over time.avi')
 
@@ -366,13 +371,10 @@ def execution(dc_sample):
     print("\n-------------------------------------------------------")
     print("                 Simulation over")
     print("-------------------------------------------------------")
-    rerun = input("\nPress y and ENTER to run an new simulation, otherwise press ENTER...\n")
-    if rerun == 'y':
-        return 1
+    # rerun = input("\nPress y and ENTER to run an new simulation, otherwise press ENTER...\n")
+    # # if rerun == 'y':
+    # #     return 1
     return r.current
-
-while execution(0.4):
-    continue
 
 
 def create_i_of_dc():
@@ -382,45 +384,65 @@ def create_i_of_dc():
     dc_list = []
     current_list = []
     plot_uid = create_unique_id()
-    for dc_sample in range(0,20):
-        current_calculated = execution(dc_sample/20)
-        dc_list.append(dc_sample/20)
+    runs = 40
+    for dc_sample in range(0, runs):
+        current_calculated = execution(dc_sample/runs, 600000)
+        dc_list.append(dc_sample/runs)
         current_list.append(current_calculated)
     plt.figure(plot_uid)
     plt.plot(dc_list, current_list, label="I(duty cycle)", color='#f5bc42')
-    plt.suptitle('RIMS: current direction changing over duty cycle', fontsize=12, fontweight='bold')
+    plt.suptitle('RIMS: current changing over DC at 600KHz', fontsize=12, fontweight='bold')
     plt.xlabel(r"DC")
     plt.ylabel(r"I [AMP]")
-    #plt.legend(loc="upper left")
+
+    max_current = max(current_list)
+    max_i = current_list.index(max_current)
+    plt.plot(dc_list[max_i], max_current, 'g^')
+    plt.text(dc_list[max_i], max_current, str(max_current))
+
+    min_current = min(current_list)
+    min_i = current_list.index(min_current)
+    plt.plot(dc_list[min_i], min_current, 'rv')
+    plt.text(dc_list[min_i], min_current, str(min_current))
+
     plt.axhline(color='r')
-    plt.savefig('i_dc '+ plot_uid +'.jpeg')
+    plt.savefig('i_dc ' + plot_uid + '.jpeg')
     print('I_dc saved to output plots.')
 
-# def create_heatmap():
-#     resulotion = 20
-#     plot_uid = create_unique_id()
-#     matrix = []
-#     for f_sample in range(1,resulotion):
-#         dc_list = []
-#         current_list = []
-#         for dc_sample in range(0, resulotion):
-#             current_calculated = execution(dc_sample / resulotion)
-#             dc_list.append(dc_sample / 20)
-#             current_list.append(current_calculated)
-#         current_list_np = np.array(current_list)
-#         matrix.append(current_list)
-#
-#     fig, ax = plt.subplots()
-#
-#     cax = ax.imshow(matrix, cmap=plt.cm.co)
-#     ax.set_title('Gaussian noise with vertical colorbar')
-#
-#     # Add colorbar, make sure to specify tick locations to match desired ticklabels
-#     cbar = fig.colorbar(cax, ticks=[-1, 0, 1])
-#     cbar.ax.set_yticklabels(['< -1', '0', '> 1'])  # vertically oriented colorbar
 
-        
+def create_heat_map():
+    resolution_f = 10
+    resolution_dc = 10
+    dc_list = [dc/resolution_dc for dc in range(resolution_dc, 0, -1)]
+    f_list = [f * 1000 for f in range(100, 1100, 100)]
+
+    plot_uid = create_unique_id()
+    matrix = np.zeros(shape=(resolution_f, resolution_dc))
+    for i_f in range(0, resolution_f):
+        current_vector = np.zeros(resolution_dc)
+        for i_dc in range(0, resolution_dc):
+            dc_input = dc_list[i_dc]
+            f_input = f_list[i_f]
+            current_calculated = execution(dc_input, f_input)
+            current_vector[i_dc] = current_calculated
+        matrix[resolution_f - i_f - 1] = current_vector
+
+    fig, ax = plt.subplots()
+
+    f_list_label = [str(int(f / 1000)) + 'k' for f in f_list]
+    im, _ = heatmap(matrix.transpose(), dc_list, f_list_label, ax=ax, vmin=0,
+                    cmap="PuOr", cbarlabel="I(DC, frequency)")
+    plt.tight_layout()
+    ax.set_title('RIMS: I(DC, frequency) heat-map')
+    ax.set_ylabel('Duty Cycle')
+    ax.set_xlabel('Ratchet Frequency')
+
+    file_name = 'i_dc_f_heat-map ' + plot_uid + '.jpeg'
+    plt.savefig(file_name)
+    print('I_dc_f_heat map saved to main directory as ' + file_name)
+    plt.close(plot_uid)
+    return
 
 
-
-
+create_i_of_dc()
+# create_heat_map()

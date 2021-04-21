@@ -77,7 +77,7 @@ def create_log_file(rims_object, ion_subject):
     f.write("\tmeasurements per particle: " + str(ion_subject.points) + "\n")
     f.write("\tintervals (delta_t): " + str(ion_subject.interval) + "[sec]\n")
     f.write("\tfriction coefficient (gamma): " + str(ion_subject.gamma) + "\n")
-    f.write("\tresolution: " + str(RESOLUTION) + "\n")
+    f.write("\tresolution: " + str(rims_object.resolution) + "\n")
     f.write("\tvelocity: " + str(rims_object.velocity) + "[cm/sec]\n")
     f.close()
 
@@ -113,7 +113,7 @@ def plot_potential_profile(rims_object, x, V, E, index):
     ax2 = ax1.twinx()
 
     color = PURPLE
-    ax2.set_ylabel(r"E [v/$\mu $m]", color=color)
+    ax2.set_ylabel(r"E [v/cm]", color=color)
     ax2.plot(x, E, color=color, label=r"E(x) electric field = -$\nabla $V")
     ax2.tick_params(axis='y', labelcolor=color)
     plt.legend(loc="lower left")

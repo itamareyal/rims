@@ -52,7 +52,7 @@ class ion:
         self.gamma = BOLTZMANN_CONSTANT * TEMPERATURE / self.diffusion
 
     def electric_force(self, x):
-        index_in_array = int(x * RESOLUTION / self.L)
+        index_in_array = int(x * self.electric_field_mat.shape[1] / self.L)
         mode = self.ratchet_mode()
         electric_field = self.electric_field_mat[mode][index_in_array]
         return self.gamma * electric_field
@@ -63,8 +63,7 @@ class ion:
 
     def ratchet_mode(self):
         """
-        checks if the ratchet is on or off (or negative).
-        :return: 1 for on, 0 for off, -1 for negative.
+        :return: the index of the active potential profile based on the current time
         """
         t_prime = np.mod(self.intervals_count * self.interval, self.flash_period)
         mode = 0

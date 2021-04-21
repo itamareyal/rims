@@ -76,7 +76,7 @@ def extract_data_from_interface(number_selection):
 
     else:
         L, t_vec, potential_mat = load_data_from_csv(DATA_CSV_FILE)
-        x = np.linspace(0, L, num=RESOLUTION)
+        x = np.linspace(0, L, num=potential_mat.shape[1])
 
     print("\nEnter ratchet flashing frequency in Hz: (can use factors of K,M,G)")
     flash_frequency = -1
@@ -202,7 +202,7 @@ def load_data_from_csv(csv_file_path):
 
     NOTE: all potential profiles must be of the same length and same number of points
     """
-    vec_header = np.loadtxt(csv_file_path, max_rows=1, delimiter=',', dtype='float')   # holds the first data row
+    vec_header = np.loadtxt(csv_file_path, max_rows=1, delimiter=',')   # holds the first data row
     scalar_x = vec_header[0] * pow(10, -4)                              # width of the profile
     vec_t = vec_header[1:]                                              # timings vector
     mat_v = np.loadtxt(csv_file_path, skiprows=1, delimiter=',')        # potential profiles

@@ -59,6 +59,7 @@ class rims:
         self.start_time = datetime.now()
         self.path_for_output = r'RIMS output plots/' + get_time_stamp(self) + r'/'
         self.fast_mode = fast_mode
+        self.resolution = self.potential_profile_mat.shape[1]
 
         '''result attributes'''
         self.velocity = 0
@@ -79,7 +80,7 @@ class rims:
         Derives the electric field from the potential, E(x,t) saves it as attribute
         """
 
-        self.electric_field_mat = np.array([-np.gradient(v, 1/RESOLUTION) for v in self.potential_profile_mat])
+        self.electric_field_mat = np.array([-np.gradient(v, 1/self.resolution) for v in self.potential_profile_mat])
 
         '''plot E & V'''
         if not self.fast_mode:
@@ -129,7 +130,7 @@ class rims:
             plt.figure(plot_id)
             weights = np.ones_like(x_results) / float(len(x_results))
             x_results_um = [x * np.power(10, 4) for x in x_results]
-            plt.hist(x_results_um, weights=weights, bins=RESOLUTION, label=r"X [$\mu $m]")
+            plt.hist(x_results_um, weights=weights, bins=self.resolution, label=r"X [$\mu $m]")
             plt.ylabel('Density')
             plt.xlabel(r'X [$\mu $m]')
             plt.title(r"Histogram of distribution x axis: $\rho $(x)")
@@ -166,7 +167,7 @@ class rims:
 
             plt.figure(frame)
             weights = np.ones_like(x_results) / float(len(x_results))
-            plt.hist(x_results, weights=weights, bins=RESOLUTION, label=r"X [$\mu $m]", range=(-5, 5))
+            plt.hist(x_results, weights=weights, bins=self.resolution, label=r"X [$\mu $m]", range=(-5, 5))
             plt.ylim(0, 0.035)
             plt.ylabel('Density')
             plt.xlabel(r'X [$\mu $m]')

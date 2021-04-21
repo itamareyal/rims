@@ -1,4 +1,4 @@
-I decided to use ratchet profiles from a csv, make sure it's set as follows:
+If decided to use ratchet profiles from a csv, make sure it's set as follows:
 
 csv file name: DATA_CSV_FILE = 'test_profiles.csv'
 

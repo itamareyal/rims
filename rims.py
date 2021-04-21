@@ -36,68 +36,58 @@ from interface import *
 
 
 class rims:
-    def __init__(self, ion_subject, potential_profile, flash_frequency, flash_mode, dc, fast_mode):
+    def __init__(self, ion_subject, potential_profile, flash_frequency, fast_mode):
         """
         Instance holding attributes of the whole simulation
         :param ion_subject: ion type to be simulated
         :param potential_profile: list holding potential profile shape [L,a1,a2]
         :param flash_frequency: flashing rate of the ratchet
-        :param flash_mode: determines the profile when in 1-dc. Either completely off or negative and amp by ALPHA
-        :param dc: duty cycle of positive part of the potential profile
+        :param fast_mode: indication for no plotting and mid-calculation data savings
         """
-        self.ion = ion_subject
-        self.current = 0
-        self.electric_field = 0
-        self.potential_profile = 0
+        '''ratchet attributes'''
         self.potential_profile_list = potential_profile
+        self.L = self.potential_profile_list[0]                         # profile length x axis [um]
+        self.x_space_vec = self.potential_profile_list[1]
+        self.time_vec = self.potential_profile_list[2]
+        self.potential_profile_mat = self.potential_profile_list[3]
+        self.electric_field_mat = np.zeros(shape=(1, 1))                # initialized to zeros
         self.flash_frequency = flash_frequency
-        self.flash_mode = flash_mode
-        self.dc = dc
+
+        '''simulation attributes'''
+        self.ion = ion_subject
         self.number_of_simulations = NUMBER_OF_SIMULATIONS
         self.start_time = datetime.now()
         self.path_for_output = r'RIMS output plots/' + get_time_stamp(self) + r'/'
         self.fast_mode = fast_mode
+
+        '''result attributes'''
+        self.velocity = 0
+        self.current = 0
 
     def create_ion(self):
         """
         Creates ion class instance to be simulated
         :return: ion instance
         """
-        i = ion(self.ion, self.potential_profile_list, self.flash_frequency, self.flash_mode, self.dc, self.electric_field, self.potential_profile, self.path_for_output) #Add self.temperature if necessary
-        i.create_arena()
+        i = ion(self.ion, self.L, self.flash_frequency, self.time_vec, self.electric_field_mat, self.path_for_output)
         i.get_intervals()
         i.get_gamma()
         return i
 
     def get_electric_field(self):
         """
-        Derives the electric field from the potential, E(x).
-        saves E(x) as attribute self.electric field and V(x) as self.potential_profile.
+        Derives the electric field from the potential, E(x,t) saves it as attribute
         """
-        if self.potential_profile_list[3] == 2:     # sin
-            L = self.potential_profile_list[0]      # profile length x axis [um]
-            a1 = self.potential_profile_list[1]     # amp of first sin wave [V]
-            a2 = self.potential_profile_list[2]     # amp of second sin wave [V]
-            x = np.linspace(0, L, num=RESOLUTION)
-            V = a1 * np.sin(2*np.pi *x / L) + a2 * np.sin(4*np.pi *x / L)
 
-        else:                                       # saw
-            a = self.potential_profile_list[0]      # narrow left part of saw [um]
-            b = self.potential_profile_list[1]      # thick right part of saw [um]
-            A = self.potential_profile_list[2]      # amp of saw wave [V]
-            x = np.linspace(0, a+b, num=RESOLUTION)
-            f1 = A * np.divide(x, a)
-            f2 = A * np.divide((x-(a+b)), (-b))
-            step = np.heaviside(x-a, 1)
-            V = f1 - step * f1 + step * f2
-
-        E = -np.gradient(V, 0.001)
-        self.electric_field = E
-        self.potential_profile = V
+        self.electric_field_mat = np.array([-np.gradient(v, 1/RESOLUTION) for v in self.potential_profile_mat])
 
         '''plot E & V'''
         if not self.fast_mode:
-            plot_potential_profile(self, x, V, E)
+            X = self.x_space_vec
+            for i in range(self.potential_profile_mat.shape[0]):
+                V = self.potential_profile_mat[i]
+                E = self.electric_field_mat[i]
+                plot_potential_profile(self, X, V, E, i)
         return
 
     def create_histogram(self):
@@ -126,6 +116,7 @@ class rims:
         vt_vector = np.array(vt_list)
         vt_av = np.average(vt_vector)
         vt_over_T = vt_av * ion_subject.interval * self.flash_frequency
+        self.velocity = vt_over_T
         self.current = get_current(-vt_over_T, NE, SIGMA, ELECTRON_CHARGE)
 
         if not self.fast_mode:
@@ -205,9 +196,9 @@ def execution(dc_sample, f_sample, fast_mode):
         '''no logs or plots of execution will be saved, no prints to console'''
         ion_selection = debug_dict["ion_selection"]
         potential_profile = debug_dict["potential_profile"]
+        potential_profile[2][0] = float(dc_sample / f_sample)
+        potential_profile[2][1] = 1 / f_sample
         flash_frequency = f_sample
-        dc = dc_sample
-        flash_mode = debug_dict["flash_mode"]
         output_selection = debug_dict["output_selection"]
 
     else:
@@ -218,16 +209,14 @@ def execution(dc_sample, f_sample, fast_mode):
             ion_selection = debug_dict["ion_selection"]
             potential_profile = debug_dict["potential_profile"]
             flash_frequency = 600000
-            dc = 0.6
-            flash_mode = debug_dict["flash_mode"]
             output_selection = debug_dict["output_selection"]
 
         else:
             '''Extraction of all the data from the user'''
-            ion_selection, potential_profile, flash_frequency, flash_mode, dc, output_selection = \
+            ion_selection, potential_profile, flash_frequency, output_selection = \
                 extract_data_from_interface(number_selection)
 
-    r = rims(ion_selection, potential_profile, flash_frequency, flash_mode, dc, fast_mode)
+    r = rims(ion_selection, potential_profile, flash_frequency, fast_mode)
     r.get_electric_field()
     if output_selection == 1:
         r.create_histogram()
@@ -310,14 +299,15 @@ def create_heat_map():
             current_calculated = execution(dc_input, f_input, True).current
             current_vector[i_dc] = current_calculated
 
-        matrix[resolution_f - i_f - 1] = current_vector
+        matrix[:, i_f] = current_vector
     percentage_progress(1, 1)
     print("\nSimulation finished after " + str(datetime.now() - start_time) + "\n")
 
     '''Plotting heat-map'''
     fig, ax = plt.subplots()
     f_list_label = [str(int(f / 1000)) + 'k' for f in f_list]
-    im, _ = heatmap(matrix.transpose(), dc_list, f_list_label, ax=ax, vmin=np.min(matrix),
+    bar_maximal_value = max(np.abs(np.min(matrix)), np.abs(np.max(matrix)))
+    im, _ = heatmap(matrix, dc_list, f_list_label, ax=ax, vmin=-bar_maximal_value, vmax=bar_maximal_value,
                     cmap="PuOr", cbarlabel="I(DC, frequency)")
     plt.tight_layout()
     ax.set_title('RIMS: I(DC, frequency) heat-map')
@@ -336,6 +326,6 @@ def create_heat_map():
 ----------------------------------------------------------------------'''
 
 headline_panel()
-# create_i_of_dc(frequency=200000)
+# create_i_of_dc(frequency=600000)
 # create_heat_map()
 execution(0, 0, False)

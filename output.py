@@ -29,6 +29,21 @@ def create_trace_file(rims_object, ion_subject):
         writer.writerow(['X0[cm]', 'X' + str(ion_subject.points) + '[cm]'])
 
 
+def create_test_csv(rims_object):
+    if not os.path.exists(rims_object.path_for_output):
+        os.makedirs(rims_object.path_for_output)
+    with open(rims_object.path_for_output + 'test_profiles.csv', newline='', mode='a') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+        t = [0.8, 0.001, 0.002, 0.004]
+        writer.writerow(t)
+        writer.writerow(rims_object.potential_profile)
+        writer.writerow(-v for v in rims_object.electric_field)
+        writer.writerow(v+1 for v in rims_object.electric_field)
+    csv_file.close()
+    print("test csv printed")
+
+
 def write_to_trace_file(rims_object, ion_subject):
     if not os.path.exists(rims_object.path_for_output):
         os.makedirs(rims_object.path_for_output)
@@ -50,23 +65,12 @@ def create_log_file(rims_object, ion_subject):
     f.write("\ttemperature: " + str(TEMPERATURE) + "[k]\n")
 
     f.write("\nRatchet potential profile\n")
-    if rims_object.potential_profile_list[3] == 2:  # sin
-        f.write("\tfunction: double sin wave \n")
-        f.write("\tamplitude: " + str(
-            rims_object.potential_profile_list[1] + rims_object.potential_profile_list[2]) + "[V]\n")
-
-    else:  # saw
-        f.write("\tfunction: saw wave \n")
-        f.write("\tamplitude: " + str(rims_object.potential_profile_list[1]) + "[V]\n")
     f.write("\twidth: " + str(ion_subject.L * pow(10, 4)) + "[um]\n")
     f.write("\tfrequency: " + str(ion_subject.flash_frequency) + "[Hz]\n")
     f.write("\tperiod: " + str(ion_subject.flash_period) + "[sec]\n")
-    f.write("\tduty cycle: " + str(rims_object.dc) + "\n")
 
-    if rims_object.flash_mode == 0:  # ON/OFF
-        f.write("\tflash mode: ON/OFF\n")
-    else:
-        f.write("\tflash mode: + / -\n")
+    if len(rims_object.time_vec) == 2:                              # for 2 state ratchet
+        f.write("\tduty cycle: " + str(rims_object.time_vec[0] * rims_object.flash_frequency) + "\n")
 
     f.write("\nSimulation settings\n")
     f.write("\tparticles simulated: " + str(rims_object.number_of_simulations) + "\n")
@@ -74,7 +78,7 @@ def create_log_file(rims_object, ion_subject):
     f.write("\tintervals (delta_t): " + str(ion_subject.interval) + "[sec]\n")
     f.write("\tfriction coefficient (gamma): " + str(ion_subject.gamma) + "\n")
     f.write("\tresolution: " + str(RESOLUTION) + "\n")
-    f.write("\tcurrent: " + str(rims_object.current) + "[A]\n")
+    f.write("\tvelocity: " + str(rims_object.velocity) + "[cm/sec]\n")
     f.close()
 
 
@@ -85,37 +89,20 @@ def print_log_file(rims_object):
     f.close()
 
 
-def plot_potential_profile(rims_object, x, V, E):
+def plot_potential_profile(rims_object, x, V, E, index):
     """
     plots and saves E,V profiles as function of x over 1 cycle
     :param rims_object: simulation instance
     :param x: ratchet cycle x axis
     :param V: potential calculations at x
     :param E: -grad(V) at x
+    :param index: indexing the profile state
     """
-    plot_id = create_unique_id()
-    plt.figure(plot_id)
-    plt.plot(x, V, label="V(x) potential profile", color=YELLOW)
-
-    plt.suptitle('RIMS: Ratchet potential profile', fontsize=14, fontweight='bold')
-    plt.xlabel(r"X [m]")
-    plt.ylabel(r"V [v]")
-    plt.legend(loc="upper left")
-    save_plots(rims_object, 'Ratchet potential profile V', plot_id)
-
-    plot_id = create_unique_id()
-    plt.figure(plot_id)
-    plt.plot(x, E, label=r"E(x) electric field = -$\nabla $V", color=PURPLE)
-
-    plt.suptitle('RIMS: Ratchet potential profile', fontsize=14, fontweight='bold')
-    plt.xlabel(r"X [m]")
-    plt.ylabel(r"E [v/$\mu $m]")
-    plt.legend(loc="upper left")
-    save_plots(rims_object, 'Ratchet potential profile E', plot_id)
-    plt.close(plot_id)
+    if not os.path.exists(rims_object.path_for_output):
+        os.makedirs(rims_object.path_for_output)
 
     fig, ax1 = plt.subplots()
-    plt.suptitle('RIMS: Ratchet potential profile', fontsize=14, fontweight='bold')
+    plt.suptitle('RIMS: Ratchet potential profile mode='+str(index), fontsize=14, fontweight='bold')
 
     color = YELLOW
     ax1.set_xlabel(r"X [m]")
@@ -131,7 +118,7 @@ def plot_potential_profile(rims_object, x, V, E):
     ax2.tick_params(axis='y', labelcolor=color)
     plt.legend(loc="lower left")
     fig.tight_layout()
-    plt.savefig(rims_object.path_for_output + 'Ratchet potential profile.jpeg')
+    plt.savefig(rims_object.path_for_output + 'Ratchet potential profile ' + str(index)+'.jpeg')
     plt.close()
     return
 

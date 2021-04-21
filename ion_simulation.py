@@ -17,36 +17,30 @@ from defines import *
 ----------------------------------------------------------------------'''
 
 class ion:
-    def __init__(self, ion, potential_profile, flash_frequency, flash_mode, dc, E, V, path):
-
-        self.ion = ion
-        self.diffusion = diffusion_coefficient_dict[ion]
-        self.potential_profile_list= potential_profile
-
-        self.electric_field = E
-        self.potential_profile = V
-        self.velocity = 0
-
+    def __init__(self, ion_subject, L, flash_frequency, t_vec, E, path):
+        """
+        Instance holding ion under test
+        """
+        '''ratchet attributes'''
+        self.diffusion = diffusion_coefficient_dict[ion_subject]
+        self.electric_field_mat = E
         self.flash_frequency = flash_frequency
         self.flash_period = 1 / flash_frequency
-        self.flash_mode = flash_mode
-        self.dc = dc
+        self.time_vec = t_vec
+        self.L = L
 
-        if potential_profile[3] == 2:       # sin
-            self.L = potential_profile[0]
-        else:
-            self.L = potential_profile[0] + potential_profile[1]
+        '''simulation attributes'''
+        self.ion = ion_subject
         self.loc = random.uniform(0, self.L)
-        self.x0= self.loc
-
+        self.x0 = self.loc
         self.intervals_count = 0
         self.points = POINTS
         self.arena_count = 0
         self.path = path
 
-        # attributes calculated in simulation
+        '''result attributes'''
+        self.velocity = 0
         self.arena = -1
-        self.potential_profile = -1
         self.interval = -1
         self.gamma = -1
         self.vi = -1
@@ -59,35 +53,13 @@ class ion:
 
     def electric_force(self, x):
         index_in_array = int(x * RESOLUTION / self.L)
-        electric_field = self.electric_field[index_in_array]
-        return self.gamma * electric_field * self.ratchet_mode()
+        mode = self.ratchet_mode()
+        electric_field = self.electric_field_mat[mode][index_in_array]
+        return self.gamma * electric_field
 
     def noise(self):
         ksai = np.random.normal(0, 1)
         return np.multiply(ksai, np.sqrt(2 * self.diffusion * self.interval))
-
-    def create_arena(self):
-        """
-        Creates the potential profile V(x) over one period. for plotting.
-        saves the arena as attribute self.arena
-        """
-        if self.potential_profile_list[3] == 2:         # sin
-            L = self.potential_profile_list[0]
-            a1 = self.potential_profile_list[1]
-            a2 = self.potential_profile_list[2]
-            x = np.linspace(0, L)
-            self.arena = a1 * np.sin(2 * np.pi * x / L) + a2 * np.sin(4 * np.pi * x / L)
-
-        else:                                           # saw
-            a = self.potential_profile_list[0]
-            b = self.potential_profile_list[1]
-            A = self.potential_profile_list[2]
-            x = np.linspace(0, a+b)
-            f1 = A * np.divide(x, a)
-            f2 = A * np.divide((x-(a+b)), (-b))
-            step = 0.5*(np.sign(x-a) + 1)
-            f = f1 - step * f1 + step * f2
-            self.arena = f
 
     def ratchet_mode(self):
         """
@@ -95,10 +67,10 @@ class ion:
         :return: 1 for on, 0 for off, -1 for negative.
         """
         t_prime = np.mod(self.intervals_count * self.interval, self.flash_period)
-        if t_prime < self.dc * self.flash_period:
-            return 1
-        else:
-            return self.flash_mode
+        mode = 0
+        while t_prime > self.time_vec[mode]:
+            mode += 1
+        return mode
 
     def get_new_x(self):
         """
@@ -127,10 +99,8 @@ class ion:
         """
         ion.get_intervals(self)
         ion.get_gamma(self)
-        ion.create_arena(self)
 
         new_x = 0
-        steady_state = False
         dummy_ss = int(0.9 * self.points)
         vi_list = []
 
@@ -148,11 +118,11 @@ class ion:
         self.vi = np.average(vi_vector)
         ret_val = self.L * self.arena_count + new_x
 
-        # keeping final location in range [0, num of ratchets times arena size] to get steady state
+        '''keeping final location in range [0, num of ratchets times arena size] to get steady state'''
         #     while ret_val > RATCHETS_IN_SYSTEM * self.L:
         #         ret_val -= RATCHETS_IN_SYSTEM * self.L
         #     while ret_val < 0:
         #         ret_val += RATCHETS_IN_SYSTEM * self.L
-        # calculate group number
+
         return ret_val
 

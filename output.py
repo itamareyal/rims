@@ -105,7 +105,7 @@ def plot_potential_profile(rims_object, x, V, E, index):
     plt.suptitle('RIMS: Ratchet potential profile mode='+str(index), fontsize=14, fontweight='bold')
 
     color = YELLOW
-    ax1.set_xlabel(r"X [m]")
+    ax1.set_xlabel(r"X [$\mu $m]")
     ax1.set_ylabel(r"V [v]", color=color)
     ax1.plot(x, V, color=color, label="V(x) potential profile")
     ax1.tick_params(axis='y', labelcolor=color)

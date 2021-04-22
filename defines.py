@@ -57,7 +57,7 @@ TEMPERATURE = 293
 
 
 '''SIMULATION PARAMETERS'''
-DATA_CSV_FILE = 'test_profiles 2.csv'
+DATA_CSV_FILE = 'ratchet1.csv'
 ALPHA = 0.5                             # amplitude factor for negative period of flashing ratchet
 FLASHING_MODES = [0, -ALPHA]
 BLANK_INT = 'blank'

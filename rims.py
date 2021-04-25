@@ -36,7 +36,7 @@ from interface import *
 
 
 class rims:
-    def __init__(self, ion_subject, potential_profile, flash_frequency, fast_mode):
+    def __init__(self, ion_subject, potential_profile, fast_mode):
         """
         Instance holding attributes of the whole simulation
         :param ion_subject: ion type to be simulated
@@ -51,7 +51,7 @@ class rims:
         self.time_vec = self.potential_profile_list[2]
         self.potential_profile_mat = self.potential_profile_list[3]
         self.electric_field_mat = np.zeros(shape=(1, 1))                # initialized to zeros
-        self.flash_frequency = flash_frequency
+        self.flash_frequency = 1/self.time_vec[-1]
 
         '''simulation attributes'''
         self.ion = ion_subject
@@ -70,7 +70,7 @@ class rims:
         Creates ion class instance to be simulated
         :return: ion instance
         """
-        i = ion(self.ion, self.L, self.flash_frequency, self.time_vec, self.electric_field_mat, self.path_for_output)
+        i = ion(self.ion, self.L, self.time_vec, self.electric_field_mat, self.path_for_output)
         i.get_intervals()
         i.get_gamma()
         return i
@@ -199,7 +199,6 @@ def execution(dc_sample, f_sample, fast_mode):
         potential_profile = debug_dict["potential_profile"]
         potential_profile[2][0] = float(dc_sample / f_sample)
         potential_profile[2][1] = 1 / f_sample
-        flash_frequency = f_sample
         output_selection = debug_dict["output_selection"]
 
     else:
@@ -209,15 +208,14 @@ def execution(dc_sample, f_sample, fast_mode):
             '''Debug mode: preselected parameters for simulator functional testing'''
             ion_selection = debug_dict["ion_selection"]
             potential_profile = debug_dict["potential_profile"]
-            flash_frequency = 600000
             output_selection = debug_dict["output_selection"]
 
         else:
             '''Extraction of all the data from the user'''
-            ion_selection, potential_profile, flash_frequency, output_selection = \
+            ion_selection, potential_profile, output_selection = \
                 extract_data_from_interface(number_selection)
 
-    r = rims(ion_selection, potential_profile, flash_frequency, fast_mode)
+    r = rims(ion_selection, potential_profile, fast_mode)
     r.get_electric_field()
     if output_selection == 1:
         r.create_histogram()
@@ -233,37 +231,39 @@ def execution(dc_sample, f_sample, fast_mode):
     return r
 
 
-def create_i_of_dc_comparison(frequency):
+def create_i_of_dc_comparison(frequency, compare):
     """
-    Runs 40 different dc samples to create I(dc) graph for constant frequency  and compare with Kedem's exp
+    Runs different dc samples to create I(dc) graph for constant frequency  and compare with Kedem's exp
     """
     dc_list = []
     current_list = []
     k_currents = []
     plot_uid = create_unique_id()
-    runs = 10
+    runs = 20
     start_time = datetime.now()
     print("Creating I(duty cycle) graph for frequency="+str(frequency))
-    for dc_sample in range(0, runs):
+    for dc_sample in range(0, runs+1):
         percentage_progress(dc_sample, runs)
         rims_object = execution(dc_sample/runs, frequency, True)
         current_calculated = rims_object.current
         dc_list.append(dc_sample/runs)
         current_list.append(current_calculated)
 
-        '''collect for Keden'''
-        k_v = get_velocity(1/frequency, 0.8 *pow(10,-4),
-                           1.3 * pow(10, -5),
-                           -0.25*ELECTRON_CHARGE, -0.05*ELECTRON_CHARGE, -0.5, TEMPERATURE,1- dc_sample/runs)
-        k_i = get_current(k_v, NE, SIGMA, -ELECTRON_CHARGE)
-        k_currents.append(k_i)
+        if compare:
+            '''collect for Keden'''
+            k_v = get_velocity(1/frequency, 0.8 *pow(10,-4),
+                               1.3*pow(10,-5),
+                               0.25*ELECTRON_CHARGE, 0.05*ELECTRON_CHARGE, -0.5, TEMPERATURE,1- dc_sample/runs)
+            k_i = get_current(k_v, NE, SIGMA, -ELECTRON_CHARGE)
+            k_currents.append(k_i)
     percentage_progress(1, 1)
     print("\nSimulation finished after " + str(datetime.now() - start_time) + "\n")
 
     '''Plotting graph, I as a function of DC for constant frequency'''
     plt.figure(plot_uid)
     plt.plot(dc_list, current_list, label="RIMS", color=PURPLE)
-    plt.plot(dc_list, k_currents, label='Kedem exp', color=YELLOW)
+    if compare:
+        plt.plot(dc_list, k_currents, label='Kedem exp', color=YELLOW)
     plt.suptitle('RIMS: current changing over DC at '+str(frequency)+'Hz', fontsize=12, fontweight='bold')
     plt.xlabel(r"DC")
     plt.ylabel(r"I [AMP]")
@@ -282,34 +282,35 @@ def create_i_of_dc_comparison(frequency):
 
     '''Zero current line'''
     plt.axhline(color='r')
-    file_name = 'i_dc ' + plot_uid + '.jpeg'
+    file_name = 'i_dc ' + plot_uid + ' f'+str(frequency) + '.jpeg'
     plt.savefig(file_name)
     print('I_dc saved to main directory as ' + file_name)
     return
 
 
-def create_i_of_f_comparison(dc):
+def create_i_of_f_comparison(dc, compare):
     """
     Runs different frequency samples to create I(f) graph for constant dc and compare with Kedem's exp
     """
-    f_list = [f * 1000 for f in range(100, 1100, 100)]
+    f_list = [f * 1000 for f in range(10, 1100, 100)]
     current_list = []
     k_currents = []
     plot_uid = create_unique_id()
     start_time = datetime.now()
-    percentage_progress(0,1)
     print("Creating I(f) graph for dc="+str(dc))
+    percentage_progress(0,1)
     for f_sample in f_list:
         rims_object = execution(dc, f_sample, True)
         current_calculated = rims_object.current
         current_list.append(current_calculated)
 
-        '''collect for Keden'''
-        k_v = get_velocity(1/f_sample, 0.8 *pow(10,-4),
-                           1.3 * pow(10, -5),
-                           -0.25*ELECTRON_CHARGE, -0.05*ELECTRON_CHARGE, -0.5, TEMPERATURE,1- dc)
-        k_i = get_current(k_v, NE, SIGMA, -ELECTRON_CHARGE)
-        k_currents.append(k_i)
+        if compare:
+            '''collect for Keden'''
+            k_v = get_velocity(1/f_sample, 0.8 *pow(10,-4),
+                               1.3 * pow(10, -5),
+                               0.25*ELECTRON_CHARGE, 0.05*ELECTRON_CHARGE, -0.5, TEMPERATURE,1-dc)
+            k_i = get_current(k_v, NE, SIGMA, -ELECTRON_CHARGE)
+            k_currents.append(k_i)
         percentage_progress(f_sample, max(f_list))
 
     print("\nSimulation finished after " + str(datetime.now() - start_time) + "\n")
@@ -318,7 +319,8 @@ def create_i_of_f_comparison(dc):
     f_list_label = [str(int(f / 1000)) + 'k' for f in f_list]
     plt.figure(plot_uid)
     plt.plot(f_list_label, current_list, label="RIMS", color=PURPLE)
-    plt.plot(f_list_label, k_currents, label='Kedem exp', color=YELLOW)
+    if compare:
+        plt.plot(f_list_label, k_currents, label='Kedem exp', color=YELLOW)
     plt.suptitle('RIMS: current changing over f at dc='+str(dc), fontsize=12, fontweight='bold')
     plt.xlabel(r"f [KHz]")
     plt.ylabel(r"I [AMP]")
@@ -349,7 +351,7 @@ def create_heat_map():
     resolution_f = 10           # number of frequencies tested
     resolution_dc = 10          # number of Dc's tested
     dc_list = [dc/resolution_dc for dc in range(resolution_dc, 0, -1)]
-    f_list = [f * 1000 for f in range(100, 1100, 100)]
+    f_list = [f * 1000 for f in range(10, 1010, 100)]
 
     plot_uid = create_unique_id()
     matrix = np.zeros(shape=(resolution_f, resolution_dc))
@@ -391,8 +393,7 @@ def create_heat_map():
 ----------------------------------------------------------------------'''
 
 headline_panel()
-
-# create_i_of_dc_comparison(frequency=600000)
-# create_i_of_f_comparison(0.6)
+create_i_of_dc_comparison(frequency=1000000, compare=True)
+# create_i_of_f_comparison(0.6, True)
 # create_heat_map()
-execution(0, 0, False)
+# execution(0, 0, False)

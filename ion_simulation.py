@@ -17,15 +17,15 @@ from defines import *
 ----------------------------------------------------------------------'''
 
 class ion:
-    def __init__(self, ion_subject, L, flash_frequency, t_vec, E, path):
+    def __init__(self, ion_subject, L, t_vec, E, path):
         """
         Instance holding ion under test
         """
         '''ratchet attributes'''
         self.diffusion = diffusion_coefficient_dict[ion_subject]
         self.electric_field_mat = E
-        self.flash_frequency = flash_frequency
-        self.flash_period = 1 / flash_frequency
+        self.flash_frequency = 1 / t_vec[-1]
+        self.flash_period = t_vec[-1]
         self.time_vec = t_vec
         self.L = L
 
@@ -100,7 +100,7 @@ class ion:
         ion.get_gamma(self)
 
         new_x = 0
-        dummy_ss = int(0.9 * self.points)
+        dummy_ss = int(0.97 * self.points)
         vi_list = []
 
         while self.intervals_count <= self.points:

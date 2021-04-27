@@ -57,6 +57,8 @@ class rims:
         self.start_time = datetime.now()
         self.path_for_output = r'RIMS output plots/' + get_time_stamp(self) + r'/'
         self.fast_mode = fast_mode
+        self.steady_state_matrix = []
+        self.steady_state = False
 
     def create_ion(self):
         """
@@ -100,33 +102,83 @@ class rims:
             plot_potential_profile(self, x, V, E)
         return
 
+    def check_for_steady_state(self, vt_list):
+        if len(vt_list) < 5:
+            return
+        last_vi_margin = vt_list[-1] / 10
+        for i in range(2, 6, 1):
+            if (vt_list[-i] <= vt_list[-1] - last_vi_margin) or (vt_list[-i] >= vt_list[-1] + last_vi_margin):
+                return
+        self.steady_state = True
+        return
+
     def create_histogram(self):
         """
         Running ions in the system and collecting their location after the simulation.
         Creating a histogram from all collected locations
         """
         x_results = []
+        number_of_cycles_per_ion = 10
         simulation_count = 0
         ion_subject = self.create_ion()
         if not self.fast_mode:
             print("\nRIMS simulation in progress...")
             create_trace_file(self, ion_subject)
-        vt_list = []
+        vT_list = []
         '''main simulation loop'''
+        # while not self.steady_state:
+        vt_list = []
+        #     self.steady_state_matrix = []
         while simulation_count < self.number_of_simulations:
             ion_subject = self.create_ion()
-            x_results.append(ion_subject.simulate_ion())
-            vt_list.append(ion_subject.vi)
+            x_results.append(ion_subject.simulate_ion(number_of_cycles_per_ion))
+            self.steady_state_matrix.append(ion_subject.velocity_list)
+            # vt_list.append(ion_subject.steady_state_velocity)
             simulation_count += 1
+
             if not self.fast_mode:
                 percentage_progress(simulation_count, self.number_of_simulations)
                 write_to_trace_file(self, ion_subject)
+        for j in range(POINTS):
+            vtj_list = []
+            for k in range(self.number_of_simulations):
+                vtj_list.append(self.steady_state_matrix[k][j])
+            vtj_array = np.array(vtj_list)
+            vtj_av_speed = np.average(vtj_array)
+            vt_list.append(vtj_av_speed)
 
-        '''calculation of particles velocity and current at steady state'''
-        vt_vector = np.array(vt_list)
-        vt_av = np.average(vt_vector)
-        vt_over_T = vt_av * ion_subject.interval * self.flash_frequency
-        self.current = get_current(-vt_over_T, NE, SIGMA, ELECTRON_CHARGE)
+        v_plot_list = []
+        #rims.check_for_steady_state(self, vt_list)
+
+        for v in range(len(vt_list)):
+            if (v % 13 == 0):
+                v_plot_sliced_array = np.array(vt_list[v - 13 : v])
+                v_plot_list.append(np.average(v_plot_sliced_array))
+
+        unique_id = create_unique_id()
+        plt.figure(unique_id)
+        x_axis = [cycle + 1 for cycle in range(len(v_plot_list))]
+
+        plt.plot(x_axis, v_plot_list)
+        plt.xlabel(r"Ratchet Cycle")
+        plt.ylabel(r"Particle Velocity [cm/sec]")
+        plt.suptitle("Average speed of ions over ratchet cycles")
+        plt.savefig("Average speed of ions over ratchet cycles.jpeg")
+        plt.close(unique_id)
+
+        # '''calculation of particles velocity and current at steady state'''
+        # vt_vector = np.array(vt_list)
+        # vt_av = np.average(vt_vector)
+        # vt_over_T = vt_av * ion_subject.interval * self.flash_frequency
+        # vT_list.append(vt_av)
+        # rims.check_for_steady_state(self, vT_list)
+        vT_array = np.array(vt_list[-5:])
+        vT_av = np.average(vT_array)
+        number_of_cycles_per_ion = min(number_of_cycles_per_ion * 2, int(POINTS/14))
+        simulation_count = 0
+        print("number of cycles per ion is : " + str(number_of_cycles_per_ion))
+        self.current = get_current(-vT_av, NE, SIGMA, ELECTRON_CHARGE)
+        print("number of cycles per ion is : " + str(number_of_cycles_per_ion))
 
         if not self.fast_mode:
             print("\nSimulation finished after " + str(datetime.now() - self.start_time) + "\n")

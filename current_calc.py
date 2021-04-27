@@ -74,6 +74,11 @@ def phi_2(xi, delta, x, y):
     return phi_2
 
 
+def calculate_v(new_x, old_x, delta_interval):
+    v = (new_x - old_x)/delta_interval
+    return v
+
+
 def get_velocity(period, L, diffusion, a1, a2, alpha, temperature, dc):
     xi = ((L/(2 * np.pi)) ** 2) / (diffusion * period)
     x = (2 * np.pi) * xi

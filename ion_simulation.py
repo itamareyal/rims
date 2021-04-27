@@ -4,13 +4,14 @@ ion_simulation.py
 Calculates the location of an ion for every time interval.
 '''
 
+
 '''----------------------------------------------------------------------
                                 IMPORTS
 ----------------------------------------------------------------------'''
 
 import random
 from defines import *
-
+from current_calc import *
 
 '''----------------------------------------------------------------------
                             IMPLEMENTATIONS
@@ -48,8 +49,14 @@ class ion:
         self.arena = -1
         self.potential_profile = -1
         self.interval = -1
+        self.num_of_intervals_for_current = -1
         self.gamma = -1
-        self.vi = -1
+        self.steady_state_velocity = -1
+        self.steady_state = False
+        self.velocity_list = []
+
+    def get_num_of_intervals_for_current(self):
+        self.num_of_intervals_for_current = int(self.flash_period / self.interval)
 
     def get_intervals(self):
         self.interval = ((1 / INTERVALS_FLASH_RATIO) * self.L) ** 2 / (2 * self.diffusion)
@@ -117,42 +124,67 @@ class ion:
         while new_x < 0:
             new_x += self.L
             self.arena_count -= 1
-
         return new_x
 
-    def simulate_ion(self):
+    def calculate_velocity(self, v_list):
+        n = self.num_of_intervals_for_current
+        v_array = v_list[-n:]
+        np.array(v_array)
+        v = np.average(v_array)
+        self.velocity_list.append(v)
+
+    # def check_for_steady_state(self, vt_list):
+    #     if len(vt_list) < 5:
+    #         return
+    #     last_vi_margin = vt_list[-1] / 10
+    #     for i in range(2, 6, 1):
+    #         if (vt_list[-i] <= vt_list[-1] - last_vi_margin) or (vt_list[-i] >= vt_list[-1] + last_vi_margin):
+    #             return
+    #     self.steady_state = True
+    #     return
+
+    def simulate_ion(self, number_of_cycles_per_ion):
         """
         simulate ion movement over number of iterations.
         :return: location of the ion at the nd of the simulation.
         """
         ion.get_intervals(self)
+        ion.get_num_of_intervals_for_current(self)
         ion.get_gamma(self)
         ion.create_arena(self)
 
-        new_x = 0
-        steady_state = False
-        dummy_ss = int(0.9 * self.points)
+        # steady_state = False
+        # dummy_ss = int(0.9 * self.points)
         vi_list = []
 
+        #while self.intervals_count <= (number_of_cycles_per_ion * self.num_of_intervals_for_current) and self.intervals_count <= self.points:
         while self.intervals_count <= self.points:
-
-            prev_loc = self.arena_count * self.L + self.loc
-            new_x = ion.get_new_x(self)
-            self.loc = new_x
-            if self.intervals_count > dummy_ss:
-                vi = (new_x * self.arena_count * self.L - prev_loc) / self.interval
-                vi_list.append(vi)
+            old_location = (self.arena_count * self.L) + self.loc
+            self.loc = ion.get_new_x(self)
+            new_location = (self.arena_count * self.L) + self.loc
+            self.velocity_list.append(calculate_v(new_location, old_location, self.interval))
             self.intervals_count += 1
 
-        vi_vector = np.array(vi_list)
-        self.vi = np.average(vi_vector)
-        ret_val = self.L * self.arena_count + new_x
+            # if (self.intervals_count % self.num_of_intervals_for_current) == 0:
+            #     ion.calculate_velocity(self, vi_list)
+
+            # ion.check_for_steady_state(self, self.velocity_list)
+            # if self.steady_state:
+            #     break
+
+        # print("Reached Steady State after " + str(self.intervals_count + 1) + " intervals")
+        # vt_vector = np.array(self.velocity_list[-5:])
+        # self.steady_state_velocity = np.average(vt_vector)
+
+        ret_val = self.L * self.arena_count + self.loc
 
         # keeping final location in range [0, num of ratchets times arena size] to get steady state
-        #     while ret_val > RATCHETS_IN_SYSTEM * self.L:
-        #         ret_val -= RATCHETS_IN_SYSTEM * self.L
-        #     while ret_val < 0:
-        #         ret_val += RATCHETS_IN_SYSTEM * self.L
+        while ret_val > RATCHETS_IN_SYSTEM * self.L:
+            ret_val -= RATCHETS_IN_SYSTEM * self.L
+        while ret_val < 0:
+            ret_val += RATCHETS_IN_SYSTEM * self.L
         # calculate group number
         return ret_val
+
+
 

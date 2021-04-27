@@ -153,16 +153,13 @@ class ion:
         ion.get_gamma(self)
         ion.create_arena(self)
 
-        # steady_state = False
-        # dummy_ss = int(0.9 * self.points)
         vi_list = []
 
-        #while self.intervals_count <= (number_of_cycles_per_ion * self.num_of_intervals_for_current) and self.intervals_count <= self.points:
-        while self.intervals_count <= self.points:
+        while self.intervals_count <= (number_of_cycles_per_ion * self.num_of_intervals_for_current) and self.intervals_count <= self.points:
             old_location = (self.arena_count * self.L) + self.loc
             self.loc = ion.get_new_x(self)
             new_location = (self.arena_count * self.L) + self.loc
-            self.velocity_list.append(calculate_v(new_location, old_location, self.interval))
+            self.velocity_list.append(calculate_v(new_location, old_location, self.interval))           # Each ion creates a velocity_list which includes all of the velocities sampled during the simulation
             self.intervals_count += 1
 
             # if (self.intervals_count % self.num_of_intervals_for_current) == 0:

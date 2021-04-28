@@ -17,23 +17,30 @@ import numpy as np
 ----------------------------------------------------------------------'''
 
 '''PARTICLE PARAMETERS'''
-ION_LIST = ["Lead Pb+2", "Potassium K+", "Calcium Ca+2", "Sodium Na+", "Electron in Silicone"]
+ION_LIST = ["Lead Pb+2", "Potassium K+", "Calcium Ca+2", "Sodium Na+", "Electrons in Silicon"]
 
-diffusion_coefficient_dict = {              # Deff dictionary. [m^2/sec]
-    "Lead Pb+2"             : 0.945,
-    "Potassium K+"          : 1.960,
-    "Calcium Ca+2"          : 0.793,
-    "Sodium Na+"            : 1.330,
-    "Electron in Silicone"  : 0.00025       # cm^2 / sec
+diffusion_coefficient_dict = {                      # units [cm^2/sec]
+    "Lead Pb+2"             : 0.945 * pow(10, -5),
+    "Potassium K+"          : 1.960 * pow(10, -5),
+    "Calcium Ca+2"          : 0.793 * pow(10, -5),
+    "Sodium Na+"            : 1.330 * pow(10, -5),
+    "Electrons in Silicon"  : 0.00025
 }
 
+d_L = 0.8 * pow(10, -4)
+d_x = np.linspace(0, d_L, num=1000)
+d_pos = 0.25 * np.sin(2 * np.pi * d_x / d_L) + 0.05 * np.sin(4 * np.pi * d_x / d_L)
+d_neg = np.multiply(d_pos, -0.5)
+d_potential_mat = np.vstack((d_pos, d_neg))
+d_T = 1 / 600000
+d_t_vec = np.array([0.6 * d_T, d_T])
 debug_dict = {
     "ion_selection"         : ION_LIST[4],  # 0=Pb+2, 1=K+, 2=Ca+2, 3=Na+, 4=e-
     "ratchet_number"        : 2,
-    "L"                     : 0.8 * pow(10, -4),
+    "L"                     : d_L,
     "a1"                    : 0.25,
     "a2"                    : 0.05,
-    "potential_profile"     : [0.8 * pow(10, -4), 0.25, 0.05, 2],
+    "potential_profile"     : [d_L, d_x, d_t_vec, d_potential_mat],
     "flash_number"          : 1,
     "flash_mode"            : -0.5,
     "output_selection"      : 1
@@ -50,6 +57,7 @@ TEMPERATURE = 293
 
 
 '''SIMULATION PARAMETERS'''
+DATA_CSV_FILE = 'ratchet1.csv'
 ALPHA = 0.5                             # amplitude factor for negative period of flashing ratchet
 FLASHING_MODES = [0, -ALPHA]
 BLANK_INT = 'blank'
@@ -62,4 +70,5 @@ RATCHETS_IN_SYSTEM = 4
 POINTS = 600
 YELLOW = '#c49000'
 PURPLE = '#892fba'
+BLUE = '#113b80'
 

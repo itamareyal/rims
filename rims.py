@@ -36,15 +36,15 @@ from interface import *
 
 
 class rims:
-    def __init__(self, ion_subject, potential_profile, flash_frequency, flash_mode, dc, fast_mode):
+    def __init__(self, ion_subject, potential_profile, fast_mode):
         """
         Instance holding attributes of the whole simulation
         :param ion_subject: ion type to be simulated
         :param potential_profile: list holding potential profile shape [L,a1,a2]
         :param flash_frequency: flashing rate of the ratchet
-        :param flash_mode: determines the profile when in 1-dc. Either completely off or negative and amp by ALPHA
-        :param dc: duty cycle of positive part of the potential profile
+        :param fast_mode: indication for no plotting and mid-calculation data savings
         """
+        '''ratchet attributes'''
         self.ion = ion_subject
         self.current = 0
         self.interval = -1
@@ -55,6 +55,14 @@ class rims:
         self.flash_frequency = flash_frequency
         self.flash_mode = flash_mode
         self.dc = dc
+        self.L = self.potential_profile_list[0]                         # profile length x axis [um]
+        self.x_space_vec = self.potential_profile_list[1]
+        self.time_vec = self.potential_profile_list[2]
+        self.potential_profile_mat = self.potential_profile_list[3]
+        self.electric_field_mat = np.zeros(shape=(1, 1))                # initialized to zeros
+        self.flash_frequency = 1/self.time_vec[-1]
+
+        '''simulation attributes'''
         self.number_of_simulations = NUMBER_OF_SIMULATIONS
         self.num_of_intervals_per_cycle = -1
         self.start_time = datetime.now()
@@ -62,47 +70,32 @@ class rims:
         self.fast_mode = fast_mode
         self.steady_state_matrix = []
         self.steady_state = False
+        self.resolution = self.potential_profile_mat.shape[1]
+
+        '''result attributes'''
+        self.velocity = 0
+        self.current = 0
 
     def create_ion(self):
         """
         Creates ion class instance to be simulated
         :return: ion instance
         """
-        i = ion(self.ion, self.potential_profile_list, self.flash_frequency, self.flash_mode, self.dc, self.electric_field, self.potential_profile, self.path_for_output) #Add self.temperature if necessary
-        i.create_arena()
+        i = ion(self.ion, self.L, self.time_vec, self.electric_field_mat, self.path_for_output)
         i.get_intervals()
         i.get_gamma()
         return i
 
     def get_electric_field(self):
         """
-        Derives the electric field from the potential, E(x).
-        saves E(x) as attribute self.electric field and V(x) as self.potential_profile.
+        Derives the electric field from the potential, E(x,t) saves it as attribute
         """
-        if self.potential_profile_list[3] == 2:     # sin
-            L = self.potential_profile_list[0]      # profile length x axis [um]
-            a1 = self.potential_profile_list[1]     # amp of first sin wave [V]
-            a2 = self.potential_profile_list[2]     # amp of second sin wave [V]
-            x = np.linspace(0, L, num=RESOLUTION)
-            V = a1 * np.sin(2*np.pi *x / L) + a2 * np.sin(4*np.pi *x / L)
 
-        else:                                       # saw
-            a = self.potential_profile_list[0]      # narrow left part of saw [um]
-            b = self.potential_profile_list[1]      # thick right part of saw [um]
-            A = self.potential_profile_list[2]      # amp of saw wave [V]
-            x = np.linspace(0, a+b, num=RESOLUTION)
-            f1 = A * np.divide(x, a)
-            f2 = A * np.divide((x-(a+b)), (-b))
-            step = np.heaviside(x-a, 1)
-            V = f1 - step * f1 + step * f2
-
-        E = -np.gradient(V, 0.001)
-        self.electric_field = E
-        self.potential_profile = V
+        self.electric_field_mat = np.array([-np.gradient(v, 1/self.resolution) for v in self.potential_profile_mat])
 
         '''plot E & V'''
         if not self.fast_mode:
-            plot_potential_profile(self, x, V, E)
+            plot_potential_profile(self)
         return
 
     def get_num_of_intervals_per_cycle(self):
@@ -186,19 +179,18 @@ class rims:
         plt.savefig("Average speed of ions over ratchet cycles.jpeg")
         plt.close(unique_id)
 
-        # '''calculation of particles velocity and current at steady state'''
-        # vt_vector = np.array(vt_list)
-        # vt_av = np.average(vt_vector)
-        # vt_over_T = vt_av * ion_subject.interval * self.flash_frequency
-        # vT_list.append(vt_av)
-        # rims.check_for_steady_state(self, vT_list)
-        vT_array = np.array(vt_list[-5:])
-        vT_av = np.average(vT_array)
         number_of_cycles_per_ion = min(number_of_cycles_per_ion * 2, int(POINTS/14))
         simulation_count = 0
         print("number of cycles per ion is : " + str(number_of_cycles_per_ion))
         self.current = get_current(-vT_av, NE, SIGMA, ELECTRON_CHARGE)
         print("number of cycles per ion is : " + str(number_of_cycles_per_ion))
+
+        '''calculation of particles velocity and current at steady state'''
+        vt_vector = np.array(vt_list)
+        vt_av = np.average(vt_vector)
+        vt_over_T = vt_av * ion_subject.interval * self.flash_frequency
+        self.velocity = vt_over_T
+        self.current = get_current(-vt_over_T, NE, SIGMA, ELECTRON_CHARGE)
 
         if not self.fast_mode:
             print("\nSimulation finished after " + str(datetime.now() - self.start_time) + "\n")
@@ -210,7 +202,7 @@ class rims:
             plt.figure(plot_id)
             weights = np.ones_like(x_results) / float(len(x_results))
             x_results_um = [x * np.power(10, 4) for x in x_results]
-            plt.hist(x_results_um, weights=weights, bins=RESOLUTION, label=r"X [$\mu $m]")
+            plt.hist(x_results_um, weights=weights, bins=self.resolution, label=r"X [$\mu $m]")
             plt.ylabel('Density')
             plt.xlabel(r'X [$\mu $m]')
             plt.title(r"Histogram of distribution x axis: $\rho $(x)")
@@ -247,7 +239,7 @@ class rims:
 
             plt.figure(frame)
             weights = np.ones_like(x_results) / float(len(x_results))
-            plt.hist(x_results, weights=weights, bins=RESOLUTION, label=r"X [$\mu $m]", range=(-5, 5))
+            plt.hist(x_results, weights=weights, bins=self.resolution, label=r"X [$\mu $m]", range=(-5, 5))
             plt.ylim(0, 0.035)
             plt.ylabel('Density')
             plt.xlabel(r'X [$\mu $m]')
@@ -277,9 +269,8 @@ def execution(dc_sample, f_sample, fast_mode):
         '''no logs or plots of execution will be saved, no prints to console'''
         ion_selection = debug_dict["ion_selection"]
         potential_profile = debug_dict["potential_profile"]
-        flash_frequency = f_sample
-        dc = dc_sample
-        flash_mode = debug_dict["flash_mode"]
+        potential_profile[2][0] = float(dc_sample / f_sample)
+        potential_profile[2][1] = 1 / f_sample
         output_selection = debug_dict["output_selection"]
 
     else:
@@ -289,17 +280,14 @@ def execution(dc_sample, f_sample, fast_mode):
             '''Debug mode: preselected parameters for simulator functional testing'''
             ion_selection = debug_dict["ion_selection"]
             potential_profile = debug_dict["potential_profile"]
-            flash_frequency = 600000
-            dc = 0.6
-            flash_mode = debug_dict["flash_mode"]
             output_selection = debug_dict["output_selection"]
 
         else:
             '''Extraction of all the data from the user'''
-            ion_selection, potential_profile, flash_frequency, flash_mode, dc, output_selection = \
+            ion_selection, potential_profile, output_selection = \
                 extract_data_from_interface(number_selection)
 
-    r = rims(ion_selection, potential_profile, flash_frequency, flash_mode, dc, fast_mode)
+    r = rims(ion_selection, potential_profile, fast_mode)
     r.get_electric_field()
     if output_selection == 1:
         r.create_histogram()
@@ -315,50 +303,136 @@ def execution(dc_sample, f_sample, fast_mode):
     return r
 
 
-def create_i_of_dc(frequency):
+def create_i_of_dc_comparison(frequency, compare):
     """
-    Runs 40 different dc samples to create I(dc) graph for constant frequency
+    Runs different dc samples to create I(dc) graph for constant frequency  and compare with Kedem's exp
     """
     dc_list = []
-    current_list = []
+    f_list = [100000,400000,700000]
+    current_1 = []
+    current_2 = []
+    current_3 = []
+    k_currents = []
     plot_uid = create_unique_id()
-    runs = 40
+    runs = 20
     start_time = datetime.now()
-    print("Creating I(duty cycle) graph for frequency="+str(frequency))
-    for dc_sample in range(0, runs):
+    print("Creating I(duty cycle) graph for 3 frequencies: "+str(f_list))
+
+    for dc_sample in range(0, runs+1):
         percentage_progress(dc_sample, runs)
-        rims_object = execution(dc_sample/runs, frequency, True)
+        rims_object = execution(dc_sample/runs, 100000, True)
         current_calculated = rims_object.current
+        current_1.append(current_calculated)
+        rims_object = execution(dc_sample/runs, 400000, True)
+        current_calculated = rims_object.current
+        current_2.append(current_calculated)
+        rims_object = execution(dc_sample/runs, 700000, True)
+        current_calculated = rims_object.current
+        current_3.append(current_calculated)
         dc_list.append(dc_sample/runs)
-        current_list.append(current_calculated)
+
+        if compare:
+            '''collect for Keden'''
+            k_v = get_velocity(float(1/frequency), 0.8 * pow(10, -4),
+                               2.5 * pow(10, -4),
+                               0.25*ELECTRON_CHARGE, 0.05*ELECTRON_CHARGE, -0.5,
+                               TEMPERATURE, 1 - float(dc_sample/runs))
+
+            k_i = get_current(k_v, NE, SIGMA, ELECTRON_CHARGE)
+            k_currents.append(k_i/10)
+
+
     percentage_progress(1, 1)
+    print("\nSimulation finished after " + str(datetime.now() - start_time) + "\n")
 
     '''Plotting graph, I as a function of DC for constant frequency'''
-    print("\nSimulation finished after " + str(datetime.now() - start_time) + "\n")
     plt.figure(plot_uid)
-    plt.plot(dc_list, current_list, label="I(duty cycle)", color='#f5bc42')
-    plt.suptitle('RIMS: current changing over DC at '+str(frequency)+'Hz', fontsize=12, fontweight='bold')
+    plt.plot(dc_list, current_1, label=str(f_list[0]/1000)+"KHz", color=PURPLE)
+    plt.plot(dc_list, current_2, label=str(f_list[1]/1000)+"KHz", color=YELLOW)
+    plt.plot(dc_list, current_3, label=str(f_list[2]/1000)+"KHz", color=BLUE)
+
+    if compare:
+        plt.plot(dc_list, k_currents, label='Kedem exp', color=YELLOW)
+    plt.suptitle('RIMS: current changing over DC at different frequencies', fontsize=12, fontweight='bold')
     plt.xlabel(r"DC")
     plt.ylabel(r"I [AMP]")
+    plt.legend(loc='upper left')
+
+    '''Adding min & max markers'''
+    # max_current = max(current_list)
+    # max_i = current_list.index(max_current)
+    # plt.plot(dc_list[max_i], max_current, 'g^')
+    # plt.text(dc_list[max_i], max_current, str(max_current))
+    #
+    # min_current = min(current_list)
+    # min_i = current_list.index(min_current)
+    # plt.plot(dc_list[min_i], min_current, 'rv')
+    # plt.text(dc_list[min_i], min_current, str(min_current))
+
+    '''Zero current line'''
+    plt.axhline(color='r')
+    file_name = 'i_dc changing f' + plot_uid + '.jpeg'
+    plt.savefig(file_name)
+    print('I_dc saved to main directory as ' + file_name)
+    plt.close(plot_uid)
+    return
+
+
+def create_i_of_f_comparison(dc, compare):
+    """
+    Runs different frequency samples to create I(f) graph for constant dc and compare with Kedem's exp
+    """
+    f_list = [f * 1000 for f in range(10, 1100, 100)]
+    current_list = []
+    k_currents = []
+    plot_uid = create_unique_id()
+    start_time = datetime.now()
+    print("Creating I(f) graph for dc="+str(dc))
+    percentage_progress(0,1)
+    for f_sample in f_list:
+        rims_object = execution(dc, f_sample, True)
+        current_calculated = rims_object.current
+        current_list.append(current_calculated)
+
+        if compare:
+            '''collect for Keden'''
+            k_v = get_velocity(1/f_sample, 0.8 *pow(10,-4),
+                               1.3 * pow(10, -5),
+                               0.25*ELECTRON_CHARGE, 0.05*ELECTRON_CHARGE, -0.5, TEMPERATURE,1-dc)
+            k_i = get_current(k_v, NE, SIGMA, -ELECTRON_CHARGE)
+            k_currents.append(k_i)
+        percentage_progress(f_sample, max(f_list))
+
+    print("\nSimulation finished after " + str(datetime.now() - start_time) + "\n")
+
+    '''Plotting graph, I as a function of DC for constant frequency'''
+    f_list_label = [str(int(f / 1000)) + 'k' for f in f_list]
+    plt.figure(plot_uid)
+    plt.plot(f_list_label, current_list, label="RIMS", color=PURPLE)
+    if compare:
+        plt.plot(f_list_label, k_currents, label='Kedem exp', color=YELLOW)
+    plt.suptitle('RIMS: current changing over f at dc='+str(dc), fontsize=12, fontweight='bold')
+    plt.xlabel(r"f [KHz]")
+    plt.ylabel(r"I [AMP]")
+    plt.legend(loc='upper right')
 
     '''Adding min & max markers'''
     max_current = max(current_list)
     max_i = current_list.index(max_current)
-    plt.plot(dc_list[max_i], max_current, 'g^')
-    plt.text(dc_list[max_i], max_current, str(max_current))
+    plt.plot(f_list_label[max_i], max_current, 'g^')
+    plt.text(f_list_label[max_i], max_current, str(max_current))
 
     min_current = min(current_list)
     min_i = current_list.index(min_current)
-    plt.plot(dc_list[min_i], min_current, 'rv')
-    plt.text(dc_list[min_i], min_current, str(min_current))
+    plt.plot(f_list_label[min_i], min_current, 'rv')
+    plt.text(f_list_label[min_i], min_current, str(min_current))
 
     '''Zero current line'''
     plt.axhline(color='r')
-    file_name = 'i_dc ' + plot_uid + '.jpeg'
+    file_name = 'i_f ' + plot_uid + '.jpeg'
     plt.savefig(file_name)
-    print('I_dc saved to main directory as ' + file_name)
+    print('I_f saved to main directory as ' + file_name)
     return
-
 
 def create_heat_map():
     """
@@ -367,7 +441,7 @@ def create_heat_map():
     resolution_f = 10           # number of frequencies tested
     resolution_dc = 10          # number of Dc's tested
     dc_list = [dc/resolution_dc for dc in range(resolution_dc, 0, -1)]
-    f_list = [f * 1000 for f in range(100, 1100, 100)]
+    f_list = [f * 1000 for f in range(10, 1010, 100)]
 
     plot_uid = create_unique_id()
     matrix = np.zeros(shape=(resolution_f, resolution_dc))
@@ -382,14 +456,15 @@ def create_heat_map():
             current_calculated = execution(dc_input, f_input, True).current
             current_vector[i_dc] = current_calculated
 
-        matrix[resolution_f - i_f - 1] = current_vector
+        matrix[:, i_f] = current_vector
     percentage_progress(1, 1)
     print("\nSimulation finished after " + str(datetime.now() - start_time) + "\n")
 
     '''Plotting heat-map'''
     fig, ax = plt.subplots()
     f_list_label = [str(int(f / 1000)) + 'k' for f in f_list]
-    im, _ = heatmap(matrix.transpose(), dc_list, f_list_label, ax=ax, vmin=np.min(matrix),
+    bar_maximal_value = max(np.abs(np.min(matrix)), np.abs(np.max(matrix)))
+    im, _ = heatmap(matrix, dc_list, f_list_label, ax=ax, vmin=-bar_maximal_value, vmax=bar_maximal_value,
                     cmap="PuOr", cbarlabel="I(DC, frequency)")
     plt.tight_layout()
     ax.set_title('RIMS: I(DC, frequency) heat-map')
@@ -408,6 +483,8 @@ def create_heat_map():
 ----------------------------------------------------------------------'''
 
 headline_panel()
-# create_i_of_dc(frequency=200000)
+
+# create_i_of_dc_comparison(frequency=1, compare=False)
+# create_i_of_f_comparison(0.6, True)
 # create_heat_map()
 execution(0, 0, False)

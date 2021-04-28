@@ -1,0 +1,37 @@
+======================================================================================================
+                                    RIMS simulator manual:
+======================================================================================================
+1. to launch double click rims.exe
+2. follow the steps of setting up the system
+3. outputs will be saved to designated time-stamped folders
+
+------------------------------------------------------------------------------------------------------
+                                Step 1- Configure the system"
+------------------------------------------------------------------------------------------------------
+select the type ion to be simulated by entering its number and hitting ENTER
+
+------------------------------------------------------------------------------------------------------
+                                Step 2- Configure the ratchet"
+------------------------------------------------------------------------------------------------------
+select the ratchet potential profile from either a pre-prepared function or a csv file.
+If decided to use ratchet profiles from a csv, make sure it's set as follows:
+
+csv file name: DATA_CSV_FILE = 'test_profiles.csv'
+
+content of the csv file format:
+
+    x, t0, t1... tk
+    v00, v01, v02...     v0n
+    v10, v11, v12...     v1n
+    ...
+    vk0, vk1, vk2...     vkn
+
+    x   = length of the potential profile [um]
+    ti  = absolute time when vi switches to vi+1 [SEC]
+    tk  = time period of the whole ratchet marked T
+    k+1 = number of different potential profile
+    n+1 = number of dots describing each potential profile
+    vi  = vector describing the shape of potential profile i [volt]
+
+    NOTE: all potential profiles must be of the same length and same number of points
+

@@ -51,10 +51,7 @@ class rims:
         self.electric_field = 0
         self.potential_profile = 0
         self.potential_profile_list = potential_profile
-        self.diffusion = diffusion_coefficient_dict[ion]
-        self.flash_frequency = flash_frequency
-        self.flash_mode = flash_mode
-        self.dc = dc
+        self.diffusion = diffusion_coefficient_dict[ion_subject]
         self.L = self.potential_profile_list[0]                         # profile length x axis [um]
         self.x_space_vec = self.potential_profile_list[1]
         self.time_vec = self.potential_profile_list[2]
@@ -128,6 +125,7 @@ class rims:
         ion_subject = self.create_ion()
         self.get_intervals()
         self.get_num_of_intervals_per_cycle()
+        v_plot_list = []
 
         if not self.fast_mode:
             print("\nRIMS simulation in progress...")
@@ -167,30 +165,30 @@ class rims:
 
             rims.check_for_steady_state(self, v_plot_list)
             number_of_cycles_per_ion = number_of_cycles_per_ion * 2
-            
-        unique_id = create_unique_id()
-        plt.figure(unique_id)
-        x_axis = [cycle + 1 for cycle in range(len(v_plot_list))]
 
-        plt.plot(x_axis, v_plot_list)
-        plt.xlabel(r"Ratchet Cycle")
-        plt.ylabel(r"Particle Velocity [cm/sec]")
-        plt.suptitle("Average speed of ions over ratchet cycles")
-        plt.savefig("Average speed of ions over ratchet cycles.jpeg")
-        plt.close(unique_id)
+        '''calculation of particles velocity and current at steady state'''
+        if len(v_plot_list) >= 10:
+            vT_av_array = np.array(v_plot_list[-10:])
+            vT_av = np.average(vT_av_array)
+            self.velocity = vT_av
+            self.current = get_current(-vT_av, NE, SIGMA, ELECTRON_CHARGE)
+
+            unique_id = create_unique_id()
+            plt.figure(unique_id)
+            x_axis = [cycle + 1 for cycle in range(len(v_plot_list))]
+
+            plt.plot(x_axis, v_plot_list)
+            plt.xlabel(r"Ratchet Cycle")
+            plt.ylabel(r"Particle Velocity [cm/sec]")
+            plt.suptitle("Average speed of ions over ratchet cycles")
+            plt.savefig("Average speed of ions over ratchet cycles.jpeg")
+            plt.close(unique_id)
 
         number_of_cycles_per_ion = min(number_of_cycles_per_ion * 2, int(POINTS/14))
         simulation_count = 0
         print("number of cycles per ion is : " + str(number_of_cycles_per_ion))
-        self.current = get_current(-vT_av, NE, SIGMA, ELECTRON_CHARGE)
-        print("number of cycles per ion is : " + str(number_of_cycles_per_ion))
 
-        '''calculation of particles velocity and current at steady state'''
-        vt_vector = np.array(vt_list)
-        vt_av = np.average(vt_vector)
-        vt_over_T = vt_av * ion_subject.interval * self.flash_frequency
-        self.velocity = vt_over_T
-        self.current = get_current(-vt_over_T, NE, SIGMA, ELECTRON_CHARGE)
+        self.current = get_current(-vT_av, NE, SIGMA, ELECTRON_CHARGE)
 
         if not self.fast_mode:
             print("\nSimulation finished after " + str(datetime.now() - self.start_time) + "\n")

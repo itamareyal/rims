@@ -45,7 +45,16 @@ class rims:
         :param fast_mode: indication for no plotting and mid-calculation data savings
         """
         '''ratchet attributes'''
+        self.ion = ion_subject
+        self.current = 0
+        self.interval = -1
+        self.electric_field = 0
+        self.potential_profile = 0
         self.potential_profile_list = potential_profile
+        self.diffusion = diffusion_coefficient_dict[ion]
+        self.flash_frequency = flash_frequency
+        self.flash_mode = flash_mode
+        self.dc = dc
         self.L = self.potential_profile_list[0]                         # profile length x axis [um]
         self.x_space_vec = self.potential_profile_list[1]
         self.time_vec = self.potential_profile_list[2]
@@ -54,11 +63,13 @@ class rims:
         self.flash_frequency = 1/self.time_vec[-1]
 
         '''simulation attributes'''
-        self.ion = ion_subject
         self.number_of_simulations = NUMBER_OF_SIMULATIONS
+        self.num_of_intervals_per_cycle = -1
         self.start_time = datetime.now()
         self.path_for_output = r'RIMS output plots/' + get_time_stamp(self) + r'/'
         self.fast_mode = fast_mode
+        self.steady_state_matrix = []
+        self.steady_state = False
         self.resolution = self.potential_profile_mat.shape[1]
 
         '''result attributes'''
@@ -87,27 +98,92 @@ class rims:
             plot_potential_profile(self)
         return
 
+    def get_num_of_intervals_per_cycle(self):
+        self.num_of_intervals_per_cycle = int(1 / (self.flash_frequency * self.interval))
+
+    def get_intervals(self):
+        self.interval = ((1 / INTERVALS_FLASH_RATIO) * self.potential_profile_list[0]) ** 2 / (2 * self.diffusion)
+
+    def check_for_steady_state(self, vt_list):
+        num_discrepancies_allowed = 1
+        if len(vt_list) < 5:
+            return
+        last_vi_margin = vt_list[-1] / 10
+        for i in range(2, 6, 1):
+            if (vt_list[-i] <= vt_list[-1] - last_vi_margin) or (vt_list[-i] >= vt_list[-1] + last_vi_margin):
+                if num_discrepancies_allowed > 0:
+                    num_discrepancies_allowed -= 1
+                else:
+                    return
+
+        self.steady_state = True
+        return
+
     def create_histogram(self):
         """
         Running ions in the system and collecting their location after the simulation.
         Creating a histogram from all collected locations
         """
-        x_results = []
-        simulation_count = 0
+        number_of_cycles_per_ion = 1
         ion_subject = self.create_ion()
+        self.get_intervals()
+        self.get_num_of_intervals_per_cycle()
+
         if not self.fast_mode:
             print("\nRIMS simulation in progress...")
             create_trace_file(self, ion_subject)
-        vt_list = []
+
         '''main simulation loop'''
-        while simulation_count < self.number_of_simulations:
-            ion_subject = self.create_ion()
-            x_results.append(ion_subject.simulate_ion())
-            vt_list.append(ion_subject.vi)
-            simulation_count += 1
-            if not self.fast_mode:
-                percentage_progress(simulation_count, self.number_of_simulations)
-                write_to_trace_file(self, ion_subject)
+        while not self.steady_state:
+            x_results = []
+            vt_list = []
+            self.steady_state_matrix = []
+            simulation_count = 0
+            while simulation_count < self.number_of_simulations:
+                ion_subject = self.create_ion()
+                x_results.append(ion_subject.simulate_ion(number_of_cycles_per_ion))
+                self.steady_state_matrix.append(ion_subject.velocity_list)
+                # vt_list.append(ion_subject.steady_state_velocity)
+                simulation_count += 1
+
+                if not self.fast_mode:
+                    percentage_progress(simulation_count, self.number_of_simulations)
+                    write_to_trace_file(self, ion_subject)
+
+            for j in range(len(self.steady_state_matrix[0])):
+                vtj_list = []
+                for k in range(self.number_of_simulations):
+                    vtj_list.append(self.steady_state_matrix[k][j])
+                vtj_array = np.array(vtj_list)
+                vtj_av_speed = np.average(vtj_array)
+                vt_list.append(vtj_av_speed)
+
+            v_plot_list = []
+
+            for v in range(len(vt_list)):
+                if (v % self.num_of_intervals_per_cycle == 0):
+                    v_plot_sliced_array = np.array(vt_list[v - 13 : v])
+                    v_plot_list.append(np.average(v_plot_sliced_array))
+
+            rims.check_for_steady_state(self, v_plot_list)
+            number_of_cycles_per_ion = number_of_cycles_per_ion * 2
+            
+        unique_id = create_unique_id()
+        plt.figure(unique_id)
+        x_axis = [cycle + 1 for cycle in range(len(v_plot_list))]
+
+        plt.plot(x_axis, v_plot_list)
+        plt.xlabel(r"Ratchet Cycle")
+        plt.ylabel(r"Particle Velocity [cm/sec]")
+        plt.suptitle("Average speed of ions over ratchet cycles")
+        plt.savefig("Average speed of ions over ratchet cycles.jpeg")
+        plt.close(unique_id)
+
+        number_of_cycles_per_ion = min(number_of_cycles_per_ion * 2, int(POINTS/14))
+        simulation_count = 0
+        print("number of cycles per ion is : " + str(number_of_cycles_per_ion))
+        self.current = get_current(-vT_av, NE, SIGMA, ELECTRON_CHARGE)
+        print("number of cycles per ion is : " + str(number_of_cycles_per_ion))
 
         '''calculation of particles velocity and current at steady state'''
         vt_vector = np.array(vt_list)

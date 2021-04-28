@@ -88,8 +88,41 @@ def print_log_file(rims_object):
     print(log)
     f.close()
 
+def plot_potential_profile(rims_object):
+    """
+    plots and saves E,V profiles as function of x over 1 cycle
+    :param rims_object: simulation instance
+    :param x: ratchet cycle x axis
+    :param V: potential calculations at x
+    :param E: -grad(V) at x
+    :param index: indexing the profile state
+    """
+    if not os.path.exists(rims_object.path_for_output):
+        os.makedirs(rims_object.path_for_output)
+    number_of_profiles = rims_object.potential_profile_mat.shape[0]
+    x = rims_object.x_space_vec
+    fig, axs = plt.subplots(number_of_profiles)
+    plt.suptitle('RIMS: Ratchet potential profiles', fontsize=14, fontweight='bold')
 
-def plot_potential_profile(rims_object, x, V, E, index):
+    for i_profile in range(number_of_profiles):
+        axs[i_profile].plot(x, rims_object.potential_profile_mat[i_profile],
+                            color=YELLOW, label="V(x) potential profile")
+        axs[i_profile].tick_params(axis='y', labelcolor=YELLOW)
+
+        ax2 = axs[i_profile].twinx()
+        ax2.plot(x, rims_object.electric_field_mat[i_profile],
+                            color=PURPLE, label=r"E(x) electric field = -$\nabla $V")
+        ax2.tick_params(axis='y', labelcolor=PURPLE)
+    text_kwargs = dict(fontsize=10, color=YELLOW, fontweight='bold')
+    fig.text(0.1, 0.91, 'V(x) potential profile', text_kwargs)
+    text_kwargs = dict(fontsize=10, color=PURPLE, fontweight='bold')
+    fig.text(0.5, 0.91, r"E(x) electric field = -$\nabla $V", text_kwargs)
+    fig.tight_layout()
+    plt.savefig(rims_object.path_for_output + 'Ratchet potential profiles.jpeg')
+    plt.close()
+    return
+
+def plot_potential_profile_leg(rims_object, x, V, E, index):
     """
     plots and saves E,V profiles as function of x over 1 cycle
     :param rims_object: simulation instance

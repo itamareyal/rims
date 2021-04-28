@@ -227,6 +227,6 @@ def load_data_from_csv(csv_file_path):
     mat_v = np.loadtxt(csv_file_path, skiprows=1, delimiter=',')        # potential profiles
     if mat_v.ndim==1:
         print("only 1 profile was detected. adding a second profile such that V2= -ALPHA*V1")
-    mat_v = np.vstack((mat_v, -ALPHA * mat_v))
+        mat_v = np.vstack((mat_v, -ALPHA * mat_v))
 
     return scalar_x, vec_t, mat_v

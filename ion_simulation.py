@@ -118,10 +118,10 @@ class ion:
         ret_val = self.L * self.arena_count + new_x
 
         '''keeping final location in range [0, num of ratchets times arena size] to get steady state'''
-        #     while ret_val > RATCHETS_IN_SYSTEM * self.L:
-        #         ret_val -= RATCHETS_IN_SYSTEM * self.L
-        #     while ret_val < 0:
-        #         ret_val += RATCHETS_IN_SYSTEM * self.L
+        while ret_val > RATCHETS_IN_SYSTEM * self.L:
+            ret_val -= RATCHETS_IN_SYSTEM * self.L
+        while ret_val < 0:
+            ret_val += RATCHETS_IN_SYSTEM * self.L
 
         return ret_val
 

@@ -125,7 +125,7 @@ class ion:
 
         vi_list = []
 
-        while self.intervals_count <= (number_of_cycles_per_ion * self.num_of_intervals_for_current) and self.intervals_count <= self.points:
+        while self.intervals_count <= self.points: # and self.intervals_count <= (number_of_cycles_per_ion * self.num_of_intervals_for_current):
             old_location = (self.arena_count * self.L) + self.loc
             self.loc = ion.get_new_x(self)
             new_location = (self.arena_count * self.L) + self.loc

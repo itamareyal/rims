@@ -121,7 +121,7 @@ class rims:
         Running ions in the system and collecting their location after the simulation.
         Creating a histogram from all collected locations
         """
-        number_of_cycles_per_ion = 1
+        number_of_cycles_per_ion = 24
         ion_subject = self.create_ion()
         self.get_intervals()
         self.get_num_of_intervals_per_cycle()
@@ -132,57 +132,60 @@ class rims:
             create_trace_file(self, ion_subject)
 
         '''main simulation loop'''
-        while not self.steady_state:
-            x_results = []
-            vt_list = []
-            self.steady_state_matrix = []
-            simulation_count = 0
-            while simulation_count < self.number_of_simulations:
-                ion_subject = self.create_ion()
-                x_results.append(ion_subject.simulate_ion(number_of_cycles_per_ion))
-                self.steady_state_matrix.append(ion_subject.velocity_list)
-                # vt_list.append(ion_subject.steady_state_velocity)
-                simulation_count += 1
+        x_results = []
+        vt_list = []
+        self.steady_state_matrix = []
+        simulation_count = 0
+        while simulation_count < self.number_of_simulations:
+            ion_subject = self.create_ion()
+            x_results.append(ion_subject.simulate_ion(number_of_cycles_per_ion))
+            self.steady_state_matrix.append(ion_subject.velocity_list)
+            # vt_list.append(ion_subject.steady_state_velocity)
+            simulation_count += 1
 
-                if not self.fast_mode:
-                    percentage_progress(simulation_count, self.number_of_simulations)
-                    write_to_trace_file(self, ion_subject)
+            if not self.fast_mode:
+                percentage_progress(simulation_count, self.number_of_simulations)
+                write_to_trace_file(self, ion_subject)
 
-            for j in range(len(self.steady_state_matrix[0])):
-                vtj_list = []
-                for k in range(self.number_of_simulations):
-                    vtj_list.append(self.steady_state_matrix[k][j])
-                vtj_array = np.array(vtj_list)
-                vtj_av_speed = np.average(vtj_array)
-                vt_list.append(vtj_av_speed)
+        for j in range(len(self.steady_state_matrix[0])):
+            vtj_list = []
+            for k in range(self.number_of_simulations):
+                vtj_list.append(self.steady_state_matrix[k][j])
+            vtj_array = np.array(vtj_list)
+            vtj_av_speed = np.average(vtj_array)
+            vt_list.append(vtj_av_speed)
 
-            v_plot_list = []
+        v_plot_list = []
 
-            for v in range(len(vt_list)):
-                if (v % self.num_of_intervals_per_cycle == 0):
-                    v_plot_sliced_array = np.array(vt_list[v - 13 : v])
-                    v_plot_list.append(np.average(v_plot_sliced_array))
+        for v in range(len(vt_list)):
+            if (v % self.num_of_intervals_per_cycle == 0) and (v != 0):
+                v_plot_sliced_array = np.array(vt_list[v - 13 : v])
+                v_plot_list.append(np.average(v_plot_sliced_array))
 
-            rims.check_for_steady_state(self, v_plot_list)
-            number_of_cycles_per_ion = number_of_cycles_per_ion * 2
+        # rims.check_for_steady_state(self, v_plot_list)
+        # number_of_cycles_per_ion = number_of_cycles_per_ion * 2
 
         '''calculation of particles velocity and current at steady state'''
         if len(v_plot_list) >= 10:
             vT_av_array = np.array(v_plot_list[-10:])
-            vT_av = np.average(vT_av_array)
-            self.velocity = vT_av
-            self.current = get_current(-vT_av, NE, SIGMA, ELECTRON_CHARGE)
+        else:
+            vT_av_array = np.array(v_plot_list)
 
-            unique_id = create_unique_id()
-            plt.figure(unique_id)
-            x_axis = [cycle + 1 for cycle in range(len(v_plot_list))]
 
-            plt.plot(x_axis, v_plot_list)
-            plt.xlabel(r"Ratchet Cycle")
-            plt.ylabel(r"Particle Velocity [cm/sec]")
-            plt.suptitle("Average speed of ions over ratchet cycles")
-            plt.savefig("Average speed of ions over ratchet cycles.jpeg")
-            plt.close(unique_id)
+        vT_av = np.average(vT_av_array)
+        self.velocity = vT_av
+        self.current = get_current(-vT_av, NE, SIGMA, ELECTRON_CHARGE)
+
+        unique_id = create_unique_id()
+        plt.figure(unique_id)
+        x_axis = [cycle + 1 for cycle in range(len(v_plot_list))]
+
+        plt.plot(x_axis, v_plot_list)
+        plt.xlabel(r"Ratchet Cycle")
+        plt.ylabel(r"Particle Velocity [cm/sec]")
+        plt.suptitle("Average speed of ions over ratchet cycles")
+        plt.savefig("Average speed of ions over ratchet cycles.jpeg")
+        plt.close(unique_id)
 
         number_of_cycles_per_ion = min(number_of_cycles_per_ion * 2, int(POINTS/14))
         simulation_count = 0

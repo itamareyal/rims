@@ -103,7 +103,7 @@ class rims:
 
     def check_for_steady_state(self, vt_list):
         num_discrepancies_allowed = 1
-        if len(vt_list) < 5:
+        if len(vt_list) < MIN_NUM_SPEEDS_FOR_AVG:
             return
         last_vi_margin = vt_list[-1] / 10
         for i in range(2, 6, 1):
@@ -159,16 +159,16 @@ class rims:
             v_plot_list = []
 
             for v in range(len(vt_list)):
-                if (v % self.num_of_intervals_per_cycle == 0):
-                    v_plot_sliced_array = np.array(vt_list[v - 13 : v])
+                if (v % self.num_of_intervals_per_cycle == 0) and (v != 0):
+                    v_plot_sliced_array = np.array(vt_list[v - self.num_of_intervals_per_cycle : v])
                     v_plot_list.append(np.average(v_plot_sliced_array))
 
             rims.check_for_steady_state(self, v_plot_list)
             number_of_cycles_per_ion = number_of_cycles_per_ion * 2
 
         '''calculation of particles velocity and current at steady state'''
-        if len(v_plot_list) >= 10:
-            vT_av_array = np.array(v_plot_list[-10:])
+        if len(v_plot_list) >= MIN_NUM_SPEEDS_FOR_AVG:
+            vT_av_array = np.array(v_plot_list[-MIN_NUM_SPEEDS_FOR_AVG:])
             vT_av = np.average(vT_av_array)
             self.velocity = vT_av
             self.current = get_current(-vT_av, NE, SIGMA, ELECTRON_CHARGE)

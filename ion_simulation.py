@@ -67,7 +67,7 @@ class ion:
         """
         t_prime = np.mod(self.intervals_count * self.interval, self.flash_period)
         mode = 0
-        while t_prime > self.time_vec[mode]:
+        while t_prime >= self.time_vec[mode]:
             mode += 1
         return mode
 

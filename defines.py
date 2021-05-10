@@ -25,12 +25,13 @@ diffusion_coefficient_dict = {                      # units [cm^2/sec]
     "Calcium Ca+2"          : 0.793 * pow(10, -5),
     "Sodium Na+"            : 1.330 * pow(10, -5),
     "Electrons in Silicon"  : 0.00025
+    #"Electrons in Silicon"  : 2.5 * pow(10, -4)
 }
 
 d_L = 0.8 * pow(10, -4)
 d_x = np.linspace(0, d_L, num=1000)
 d_pos = 0.25 * np.sin(2 * np.pi * d_x / d_L) + 0.05 * np.sin(4 * np.pi * d_x / d_L)
-d_neg = np.multiply(d_pos, -0.5)
+d_neg = np.multiply(d_pos, -1)
 d_potential_mat = np.vstack((d_pos, d_neg))
 d_T = 1 / 600000
 d_t_vec = np.array([0.6 * d_T, d_T])
@@ -58,7 +59,7 @@ TEMPERATURE = 293
 
 '''SIMULATION PARAMETERS'''
 DATA_CSV_FILE = 'ratchet1.csv'
-ALPHA = 0.5                             # amplitude factor for negative period of flashing ratchet
+ALPHA = 1                            # amplitude factor for negative period of flashing ratchet
 FLASHING_MODES = [0, -ALPHA]
 BLANK_INT = 'blank'
 NUMBER_OF_SIMULATIONS = 10000

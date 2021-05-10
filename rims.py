@@ -79,8 +79,9 @@ class rims:
         """
         Derives the electric field from the potential, E(x,t) saves it as attribute
         """
-
-        self.electric_field_mat = np.array([-np.gradient(v, 1/self.resolution) for v in self.potential_profile_mat])
+        period = self.time_vec[-1]
+        frequency = 1 / period
+        self.electric_field_mat = np.array([-np.gradient(v, np.min(v)) for v in self.potential_profile_mat])
 
         '''plot E & V'''
         if not self.fast_mode:
@@ -194,7 +195,7 @@ def execution(dc_sample, f_sample, fast_mode):
         ion_selection = debug_dict["ion_selection"]
         potential_profile = debug_dict["potential_profile"]
         potential_profile[2][0] = float(dc_sample / f_sample)
-        potential_profile[2][1] = 1 / f_sample
+        potential_profile[2][1] = 1.0 / f_sample
         output_selection = debug_dict["output_selection"]
 
     else:
@@ -232,66 +233,57 @@ def create_i_of_dc_comparison(frequency, compare):
     Runs different dc samples to create I(dc) graph for constant frequency  and compare with Kedem's exp
     """
     dc_list = []
-    f_list = [100000,400000,700000]
-    current_1 = []
-    current_2 = []
-    current_3 = []
+    current_list = []
     k_currents = []
     plot_uid = create_unique_id()
-    runs = 20
+    runs = 10
     start_time = datetime.now()
-    print("Creating I(duty cycle) graph for 3 frequencies: "+str(f_list))
+    print("Creating I(duty cycle) at "+str(int(frequency/1000))+'KHz')
 
     for dc_sample in range(0, runs+1):
+        dc = dc_sample/runs
         percentage_progress(dc_sample, runs)
-        rims_object = execution(dc_sample/runs, 100000, True)
+        rims_object = execution(dc, frequency, True)
         current_calculated = rims_object.current
-        current_1.append(current_calculated)
-        rims_object = execution(dc_sample/runs, 400000, True)
-        current_calculated = rims_object.current
-        current_2.append(current_calculated)
-        rims_object = execution(dc_sample/runs, 700000, True)
-        current_calculated = rims_object.current
-        current_3.append(current_calculated)
-        dc_list.append(dc_sample/runs)
+        current_list.append(current_calculated)
+        print('i='+str(current_calculated)+'\ndc='+str(dc)+'\n\n')
+        dc_list.append(dc)
 
         if compare:
             '''collect for Keden'''
             k_v = get_velocity(float(1/frequency), 0.8 * pow(10, -4),
                                2.5 * pow(10, -4),
                                0.25*ELECTRON_CHARGE, 0.05*ELECTRON_CHARGE, -0.5,
-                               TEMPERATURE, 1 - float(dc_sample/runs))
+                               TEMPERATURE, 1 - float(dc))
 
             k_i = get_current(k_v, NE, SIGMA, ELECTRON_CHARGE)
             k_currents.append(k_i/10)
-
 
     percentage_progress(1, 1)
     print("\nSimulation finished after " + str(datetime.now() - start_time) + "\n")
 
     '''Plotting graph, I as a function of DC for constant frequency'''
     plt.figure(plot_uid)
-    plt.plot(dc_list, current_1, label=str(f_list[0]/1000)+"KHz", color=PURPLE)
-    plt.plot(dc_list, current_2, label=str(f_list[1]/1000)+"KHz", color=YELLOW)
-    plt.plot(dc_list, current_3, label=str(f_list[2]/1000)+"KHz", color=BLUE)
+    plt.plot(dc_list, current_list, label="RIMS", color=PURPLE)
+
 
     if compare:
-        plt.plot(dc_list, k_currents, label='Kedem exp', color=YELLOW)
-    plt.suptitle('RIMS: current changing over DC at different frequencies', fontsize=12, fontweight='bold')
+        plt.plot(dc_list, k_currents, label='Kedem', color=YELLOW)
+    plt.suptitle('RIMS: current changing over DC at '+str(int(frequency/1000))+'KHz', fontsize=12, fontweight='bold')
     plt.xlabel(r"DC")
     plt.ylabel(r"I [AMP]")
     plt.legend(loc='upper left')
 
     '''Adding min & max markers'''
-    # max_current = max(current_list)
-    # max_i = current_list.index(max_current)
-    # plt.plot(dc_list[max_i], max_current, 'g^')
-    # plt.text(dc_list[max_i], max_current, str(max_current))
-    #
-    # min_current = min(current_list)
-    # min_i = current_list.index(min_current)
-    # plt.plot(dc_list[min_i], min_current, 'rv')
-    # plt.text(dc_list[min_i], min_current, str(min_current))
+    max_current = max(current_list)
+    max_i = current_list.index(max_current)
+    plt.plot(dc_list[max_i], max_current, 'g^')
+    plt.text(dc_list[max_i], max_current, str(max_current))
+
+    min_current = min(current_list)
+    min_i = current_list.index(min_current)
+    plt.plot(dc_list[min_i], min_current, 'rv')
+    plt.text(dc_list[min_i], min_current, str(min_current))
 
     '''Zero current line'''
     plt.axhline(color='r')
@@ -408,7 +400,7 @@ def create_heat_map():
 
 headline_panel()
 
-# create_i_of_dc_comparison(frequency=1, compare=False)
+create_i_of_dc_comparison(frequency=600000, compare=False)
 # create_i_of_f_comparison(0.6, True)
 # create_heat_map()
-execution(0, 0, False)
+# execution(0, 0, False)

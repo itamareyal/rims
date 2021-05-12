@@ -18,12 +18,12 @@ from current_calc import *
 ----------------------------------------------------------------------'''
 
 class ion:
-    def __init__(self, ion_subject, L, t_vec, E, path):
+    def __init__(self, diffusion, L, t_vec, E, path):
         """
         Instance holding ion under test
         """
         '''ratchet attributes'''
-        self.diffusion = diffusion_coefficient_dict[ion_subject]
+        self.diffusion = diffusion
         self.electric_field_mat = E
         self.flash_frequency = 1 / t_vec[-1]
         self.flash_period = t_vec[-1]
@@ -31,7 +31,7 @@ class ion:
         self.L = L
 
         '''simulation attributes'''
-        self.ion = ion_subject
+        # self.ion = ion_subject
         self.loc = random.uniform(0, self.L)
         self.x0 = self.loc
         self.intervals_count = 0
@@ -53,7 +53,10 @@ class ion:
         self.num_of_intervals_for_current = int(self.flash_period / self.interval)
 
     def get_intervals(self):
-        self.interval = ((1 / INTERVALS_FLASH_RATIO) * self.L) ** 2 / (2 * self.diffusion)
+        critical_t = ((1 / INTERVALS_FLASH_RATIO) * self.L) ** 2 / (2 * self.diffusion)
+        while critical_t > self.flash_period / INTERVALS_FLASH_RATIO:
+            critical_t /= INTERVALS_FLASH_RATIO
+        self.interval = critical_t
 
     def get_gamma(self):
         self.gamma = BOLTZMANN_CONSTANT * TEMPERATURE / self.diffusion
@@ -62,7 +65,7 @@ class ion:
         index_in_array = int(x * self.electric_field_mat.shape[1] / self.L)
         mode = self.ratchet_mode()
         electric_field = self.electric_field_mat[mode][index_in_array]
-        return self.gamma * electric_field
+        return electric_field / self.gamma
 
     def noise(self):
         ksai = np.random.normal(0, 1)
@@ -74,7 +77,7 @@ class ion:
         """
         t_prime = np.mod(self.intervals_count * self.interval, self.flash_period)
         mode = 0
-        while t_prime > self.time_vec[mode]:
+        while t_prime >= self.time_vec[mode]:
             mode += 1
         return mode
 
@@ -97,22 +100,6 @@ class ion:
             self.arena_count -= 1
         return new_x
 
-    def calculate_velocity(self, v_list):
-        n = self.num_of_intervals_for_current
-        v_array = v_list[-n:]
-        np.array(v_array)
-        v = np.average(v_array)
-        self.velocity_list.append(v)
-
-    # def check_for_steady_state(self, vt_list):
-    #     if len(vt_list) < 5:
-    #         return
-    #     last_vi_margin = vt_list[-1] / 10
-    #     for i in range(2, 6, 1):
-    #         if (vt_list[-i] <= vt_list[-1] - last_vi_margin) or (vt_list[-i] >= vt_list[-1] + last_vi_margin):
-    #             return
-    #     self.steady_state = True
-    #     return
 
     def simulate_ion(self, number_of_cycles_per_ion):
         """
@@ -123,35 +110,21 @@ class ion:
         ion.get_num_of_intervals_for_current(self)
         ion.get_gamma(self)
 
-        vi_list = []
-
-        while self.intervals_count <= (number_of_cycles_per_ion * self.num_of_intervals_for_current) and self.intervals_count <= self.points:
+        while self.intervals_count <= max(number_of_cycles_per_ion * self.num_of_intervals_for_current, self.points):
             old_location = (self.arena_count * self.L) + self.loc
             self.loc = ion.get_new_x(self)
             new_location = (self.arena_count * self.L) + self.loc
             self.velocity_list.append(calculate_v(new_location, old_location, self.interval))           # Each ion creates a velocity_list which includes all of the velocities sampled during the simulation
             self.intervals_count += 1
 
-            # if (self.intervals_count % self.num_of_intervals_for_current) == 0:
-            #     ion.calculate_velocity(self, vi_list)
-
-            # ion.check_for_steady_state(self, self.velocity_list)
-            # if self.steady_state:
-            #     break
-
-        # print("Reached Steady State after " + str(self.intervals_count + 1) + " intervals")
-        # vt_vector = np.array(self.velocity_list[-5:])
-        # self.steady_state_velocity = np.average(vt_vector)
-
         ret_val = self.L * self.arena_count + self.loc
 
+        '''keeping final location in range [0, num of ratchets times arena size] to view steady state'''
 
-        '''keeping final location in range [0, num of ratchets times arena size] to get steady state'''
-
-        while ret_val > RATCHETS_IN_SYSTEM * self.L:
-            ret_val -= RATCHETS_IN_SYSTEM * self.L
-        while ret_val < 0:
-            ret_val += RATCHETS_IN_SYSTEM * self.L
+        # while ret_val > RATCHETS_IN_SYSTEM * self.L:
+        #     ret_val -= RATCHETS_IN_SYSTEM * self.L
+        # while ret_val < 0:
+        #     ret_val += RATCHETS_IN_SYSTEM * self.L
         # calculate group number
         return ret_val
 

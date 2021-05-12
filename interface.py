@@ -1,13 +1,27 @@
+"""
+interface.py
+
+Extraction of data from user and external files
+"""
+
+'''----------------------------------------------------------------------
+                                IMPORTS
+----------------------------------------------------------------------'''
 
 from defines import *
 import csv
 import os
 
+
+'''----------------------------------------------------------------------
+                            IMPLEMENTATION
+----------------------------------------------------------------------'''
+
 def headline_panel():
     print("-------------------------------------------------------")
     print("     RIMS - Ratchet based Ion Movement Simulator")
     print("-------------------------------------------------------")
-
+    print("For instructions, please refer to the user manual text")
     return
 
 def execution_rerun_panel():
@@ -19,10 +33,7 @@ def execution_rerun_panel():
         return True
     return False
 
-def extract_data_from_interface(number_selection):
-    ion_selection = ION_LIST[number_selection - 1]
-
-    print("\nIon selected: " + ion_selection)
+def extract_data_from_interface():
 
     print("-------------------------------------------------------")
     print("             Step 2- Configure the ratchet")
@@ -118,12 +129,12 @@ def extract_data_from_interface(number_selection):
 
     potential_profile = [L, x, t_vec, potential_mat]
 
-    print("-------------------------------------------------------")
-    print("             Step 3- Outputs selection")
-    print("-------------------------------------------------------")
-    print("\nEnter desired output combination:\n\t1)Histogram (about 30sec to generate)\n\t"
-          "2)Video (about 40min to generate)")
-    output_selection = input_check_int("Enter your selection:", [1, 2])
+    # print("-------------------------------------------------------")
+    # print("             Step 3- Outputs selection")
+    # print("-------------------------------------------------------")
+    # print("\nEnter desired output combination:\n\t1)Histogram (about 30sec to generate)\n\t"
+    #       "2)Video (about 40min to generate)")
+    # output_selection = input_check_int("Enter your selection:", [1, 2])
 
     print("\n-------------------------------------------------------")
     print("             Starting simulation")
@@ -131,7 +142,7 @@ def extract_data_from_interface(number_selection):
     print("\nBuilding Monte Carlo calculation system")
 
     print("Initial location of every ion is uniformly randomized over [0," + str(L * pow(10, 4)) + "um]\n")
-    return ion_selection, potential_profile, output_selection
+    return potential_profile
 
 def ion_selection_panel():
     print("-------------------------------------------------------")
@@ -139,14 +150,53 @@ def ion_selection_panel():
     print("-------------------------------------------------------")
 
     print("\nSelect an ion to be simulated from the following list:")
+    print("\t0) Manually insert diffusion coefficient")
     print("\t1) Lead Pb+2")
     print("\t2) Potassium K+")
     print("\t3) Calcium Ca+2")
     print("\t4) Sodium Na+")
     print("\t5) Electrons in Silicon")
     print("\t6) debug")
-    number_selection = input_check_int("Enter your selection:", range(1, 7))
-    return number_selection
+    print("\nFor multiple ions, type comma between inputs")
+
+    input_valid = False
+
+    ions_for_simulation_dict = {}
+    while not input_valid:
+        manual_counter = 1
+
+        user_input = input("Enter your selection:")
+        if ',' in user_input:
+            user_input_split = user_input.split(',')
+        else:
+            user_input_split = [user_input]
+        for arg in user_input_split:
+            arg = arg.strip(' ')
+            if arg in ['1','2','3','4','5']:
+                ion = ION_LIST[int(arg)-1]
+                diff = diffusion_coefficient_dict[ion]
+                ions_for_simulation_dict[ion] = diff
+
+            elif arg == '6': # debug
+                return int(arg)
+
+            elif arg == '0': # manual entry
+                diff = input_check_float("Enter diffusion coefficient [cm^2/sec]:")
+                ion = 'manual_input'+str(manual_counter)
+                ions_for_simulation_dict[ion] = diff
+                manual_counter +=1
+
+            else:
+                print('object '+str(arg)+' not comprehensible, re-enter arguments')
+                ions_for_simulation_dict.clear()
+                continue
+        input_valid = True
+
+    print('\nDiff coefficient to be simulated:')
+
+    for key, value in ions_for_simulation_dict.items():
+        print(key, ' : ', value,'[cm^2,sec]')
+    return ions_for_simulation_dict
 
 
 def input_check_int(msg, desired_range):
@@ -173,10 +223,9 @@ def input_check_float(msg):
     return val
 
 
-def get_time_stamp(rims_object):
-    time_start = rims_object.start_time
+def get_time_stamp(time_start):
     ts = str(time_start.strftime("%x")).replace('/', '-')+'_' \
-        + str(rims_object.start_time.strftime("%X")).replace(':', '')
+        + str(time_start.strftime("%X")).replace(':', '')
     return ts
 
 
@@ -224,6 +273,7 @@ def load_data_from_csv(csv_file_path):
     vec_header = np.loadtxt(csv_file_path, max_rows=1, delimiter=',')   # holds the first data row
     scalar_x = vec_header[0] * pow(10, -4)                              # width of the profile
     vec_t = vec_header[1:]                                              # timings vector
+    vec_t = np.array([t * pow(10, -6) for t in vec_t])
     mat_v = np.loadtxt(csv_file_path, skiprows=1, delimiter=',')        # potential profiles
     if mat_v.ndim==1:
         print("only 1 profile was detected. adding a second profile such that V2= -ALPHA*V1")

@@ -45,29 +45,30 @@ class rims:
         :param fast_mode: indication for no plotting and mid-calculation data savings
         """
         '''ratchet attributes'''
-        self.ion = ion_subject
+        self.ion = ion_subject[0]
         self.current = 0
         self.interval = -1
         self.electric_field = 0
         self.potential_profile = 0
         self.potential_profile_list = potential_profile
-        self.diffusion = diffusion_coefficient_dict[ion_subject]
+        self.diffusion = ion_subject[1]
         self.L = self.potential_profile_list[0]                         # profile length x axis [um]
         self.x_space_vec = self.potential_profile_list[1]
         self.time_vec = self.potential_profile_list[2]
         self.potential_profile_mat = self.potential_profile_list[3]
         self.electric_field_mat = np.zeros(shape=(1, 1))                # initialized to zeros
+        self.flash_period = self.time_vec[-1]
         self.flash_frequency = 1/self.time_vec[-1]
 
         '''simulation attributes'''
         self.number_of_simulations = NUMBER_OF_SIMULATIONS
-        self.num_of_intervals_per_cycle = -1
         self.start_time = datetime.now()
-        self.path_for_output = r'RIMS output plots/' + get_time_stamp(self) + r'/'
+        self.path_for_output = r'RIMS output plots/' + get_time_stamp(self.start_time) + ' ' + self.ion + r'/'
         self.fast_mode = fast_mode
         self.steady_state_matrix = []
         self.steady_state = False
-        self.resolution = self.potential_profile_mat.shape[1]
+        self.resolution = RESOLUTION if self.potential_profile_mat.shape[1] < RESOLUTION\
+            else self.potential_profile_mat.shape[1]
 
         '''result attributes'''
         self.velocity = 0
@@ -78,7 +79,7 @@ class rims:
         Creates ion class instance to be simulated
         :return: ion instance
         """
-        i = ion(self.ion, self.L, self.time_vec, self.electric_field_mat, self.path_for_output)
+        i = ion(self.diffusion, self.L, self.time_vec, self.electric_field_mat, self.path_for_output)
         i.get_intervals()
         i.get_gamma()
         return i
@@ -88,18 +89,13 @@ class rims:
         Derives the electric field from the potential, E(x,t) saves it as attribute
         """
 
-        self.electric_field_mat = np.array([-np.gradient(v, 1/self.resolution) for v in self.potential_profile_mat])
+        self.electric_field_mat = np.array([-np.gradient(v, self.L/self.resolution) for v in self.potential_profile_mat])
 
         '''plot E & V'''
         if not self.fast_mode:
             plot_potential_profile(self)
         return
 
-    def get_num_of_intervals_per_cycle(self):
-        self.num_of_intervals_per_cycle = int(1 / (self.flash_frequency * self.interval))
-
-    def get_intervals(self):
-        self.interval = ((1 / INTERVALS_FLASH_RATIO) * self.potential_profile_list[0]) ** 2 / (2 * self.diffusion)
 
     def check_for_steady_state(self, vt_list):
         num_discrepancies_allowed = 1
@@ -123,9 +119,8 @@ class rims:
         """
         number_of_cycles_per_ion = 1
         ion_subject = self.create_ion()
-        self.get_intervals()
-        self.get_num_of_intervals_per_cycle()
         v_plot_list = []
+        x_results = []
 
         if not self.fast_mode:
             print("\nRIMS simulation in progress...")
@@ -141,7 +136,6 @@ class rims:
                 ion_subject = self.create_ion()
                 x_results.append(ion_subject.simulate_ion(number_of_cycles_per_ion))
                 self.steady_state_matrix.append(ion_subject.velocity_list)
-                # vt_list.append(ion_subject.steady_state_velocity)
                 simulation_count += 1
 
                 if not self.fast_mode:
@@ -157,38 +151,27 @@ class rims:
                 vt_list.append(vtj_av_speed)
 
             v_plot_list = []
-
+            num_of_intervals_per_cycle =int(self.flash_period / ion_subject.interval)
             for v in range(len(vt_list)):
-                if (v % self.num_of_intervals_per_cycle == 0) and (v != 0):
-                    v_plot_sliced_array = np.array(vt_list[v - self.num_of_intervals_per_cycle : v])
+                if (v % num_of_intervals_per_cycle == 0) and (v != 0):
+                    v_plot_sliced_array = np.array(vt_list[v - num_of_intervals_per_cycle : v])
                     v_plot_list.append(np.average(v_plot_sliced_array))
 
             rims.check_for_steady_state(self, v_plot_list)
-            number_of_cycles_per_ion = number_of_cycles_per_ion * 2
+            self.steady_state = True
+            #number_of_cycles_per_ion = number_of_cycles_per_ion * 2
 
         '''calculation of particles velocity and current at steady state'''
         if len(v_plot_list) >= MIN_NUM_SPEEDS_FOR_AVG:
             vT_av_array = np.array(v_plot_list[-MIN_NUM_SPEEDS_FOR_AVG:])
             vT_av = np.average(vT_av_array)
             self.velocity = vT_av
-            self.current = get_current(-vT_av, NE, SIGMA, ELECTRON_CHARGE)
+            if not self.fast_mode:
+                plot_average_speed_of_ions(self, v_plot_list)
+            self.current = get_current(vT_av, NE, SIGMA, ELECTRON_CHARGE)
 
-            unique_id = create_unique_id()
-            plt.figure(unique_id)
-            x_axis = [cycle + 1 for cycle in range(len(v_plot_list))]
-
-            plt.plot(x_axis, v_plot_list)
-            plt.xlabel(r"Ratchet Cycle")
-            plt.ylabel(r"Particle Velocity [cm/sec]")
-            plt.suptitle("Average speed of ions over ratchet cycles")
-            plt.savefig("Average speed of ions over ratchet cycles.jpeg")
-            plt.close(unique_id)
-
-        number_of_cycles_per_ion = min(number_of_cycles_per_ion * 2, int(POINTS/14))
-        simulation_count = 0
-        print("number of cycles per ion is : " + str(number_of_cycles_per_ion))
-
-        self.current = get_current(-vT_av, NE, SIGMA, ELECTRON_CHARGE)
+        # number_of_cycles_per_ion = min(number_of_cycles_per_ion * 2, int(POINTS/14))
+        # print("number of cycles per ion is : " + str(number_of_cycles_per_ion))
 
         if not self.fast_mode:
             print("\nSimulation finished after " + str(datetime.now() - self.start_time) + "\n")
@@ -196,16 +179,9 @@ class rims:
             print("Simulation log file created and saved.\n")
 
             '''plotting distribution of particles histogram'''
-            plot_id = create_unique_id()
-            plt.figure(plot_id)
-            weights = np.ones_like(x_results) / float(len(x_results))
-            x_results_um = [x * np.power(10, 4) for x in x_results]
-            plt.hist(x_results_um, weights=weights, bins=self.resolution, label=r"X [$\mu $m]")
-            plt.ylabel('Density')
-            plt.xlabel(r'X [$\mu $m]')
-            plt.title(r"Histogram of distribution x axis: $\rho $(x)")
-            save_plots(self, 'Distribution x axis histogram', plot_id)
-        return
+            x_results = np.array(x_results)
+            plot_distribution_over_x_histogram(self, x_results)
+        return x_results
 
     def create_video(self):
         print("\nRIMS simulation in progress...")
@@ -264,108 +240,110 @@ def execution(dc_sample, f_sample, fast_mode):
     creating a new simulation environment and launching it
     """
     if fast_mode:
-        '''no logs or plots of execution will be saved, no prints to console'''
+        '''Fast mode: no logs or plots of execution will be saved, no prints to console'''
         ion_selection = debug_dict["ion_selection"]
         potential_profile = debug_dict["potential_profile"]
         potential_profile[2][0] = float(dc_sample / f_sample)
         potential_profile[2][1] = 1 / f_sample
-        output_selection = debug_dict["output_selection"]
+        r = rims(ion_selection, potential_profile, fast_mode)
+        r.get_electric_field()
+        r.create_histogram()
 
     else:
-        number_selection = ion_selection_panel()
+        ion_selection_dict = ion_selection_panel()
 
-        if number_selection == 6:
+        if ion_selection_dict == 6:
             '''Debug mode: preselected parameters for simulator functional testing'''
-            ion_selection = debug_dict["ion_selection"]
+            ion_selection = (debug_dict["ion_selection"])
             potential_profile = debug_dict["potential_profile"]
-            output_selection = debug_dict["output_selection"]
+            r = rims(ion_selection, potential_profile, fast_mode)
+            r.get_electric_field()
+            r.create_histogram()
+            print('i='+str(r.current))
 
         else:
             '''Extraction of all the data from the user'''
-            ion_selection, potential_profile, output_selection = \
-                extract_data_from_interface(number_selection)
+            potential_profile = extract_data_from_interface()
 
-    r = rims(ion_selection, potential_profile, fast_mode)
-    r.get_electric_field()
-    if output_selection == 1:
-        r.create_histogram()
-    elif output_selection == 2:
-        r.create_video()
-        generate_video_from_frames(r.path_for_output + 'frames', 'density over time.avi')
+            '''Simulating for every ion specified'''
+            plot_id = create_unique_id()
+            plt.figure(plot_id)
+            for key, value in ion_selection_dict.items():
+                ion_selection = (key, value)
+                print('\n-------------------------------------------------------\n')
+                print('Simulating '+ion_selection[0]+'; Deff='+str(ion_selection[1])+'[cm^2/sec]')
+                r = rims(ion_selection, potential_profile, fast_mode)
+                r.get_electric_field()
+                x_results = r.create_histogram()
+                weights = np.ones_like(x_results) / float(len(x_results))
+                x_results_um = [x * np.power(10, 4) for x in x_results]
+                if ion_selection[0][:7] == 'manual':
+                    label = str(ion_selection[1])
+                else:
+                    label = ion_selection[0]
+                plt.hist(x_results_um, weights=weights, bins=r.resolution, label=label)
+                print_log_file(r)
+
+            '''Plotting combined histogram of ions simulated'''
+            plt.ylabel('Density')
+            plt.xlabel(r'X [$\mu $m]')
+            plt.legend()
+            plt.title(r"RIMS: Histogram of distribution x axis: $\rho $(x)", fontsize=14, fontweight='bold')
+            time_stamp = get_time_stamp(datetime.now())
+            file_name = str(time_stamp) + ' Distribution histogram'
+            plt.savefig(file_name)
+            plt.close(plot_id)
+            print('Histogram saved as '+file_name+'.jpeg')
 
     if not fast_mode:
-        print_log_file(r)
         rerun = execution_rerun_panel()
         if rerun:
             execution(dc_sample, f_sample, False)
     return r
 
 
-def create_i_of_dc_comparison(frequency, compare):
+def create_i_of_dc_comparison(frequencies, compare):
     """
-    Runs different dc samples to create I(dc) graph for constant frequency  and compare with Kedem's exp
+    Runs different dc samples to create I(dc) graph for constant frequency and compare with Kedem's exp
+    :param frequencies: list of f to be simulated over every dc
+    :param compare: bool, also plot analytical calculation by Kedem
     """
-    dc_list = []
-    f_list = [100000,400000,700000]
-    current_1 = []
-    current_2 = []
-    current_3 = []
-    k_currents = []
     plot_uid = create_unique_id()
     runs = 20
+    dc_list = [dc/runs for dc in range(0,runs+1)]
     start_time = datetime.now()
-    print("Creating I(duty cycle) graph for 3 frequencies: "+str(f_list))
+    print("Creating I(duty cycle) graph")
+    plt.figure(plot_uid)
+    i_f = 0
+    for frequency in frequencies:
+        current_list = []
+        k_currents = []
+        for dc_sample in range(0, runs+1):
+            dc = dc_sample/runs
+            percentage_progress(dc_sample + i_f*len(frequencies), runs * len(frequencies))
+            rims_object = execution(dc, frequency, True)
+            current_calculated = rims_object.current
+            current_list.append(current_calculated)
 
-    for dc_sample in range(0, runs+1):
-        percentage_progress(dc_sample, runs)
-        rims_object = execution(dc_sample/runs, 100000, True)
-        current_calculated = rims_object.current
-        current_1.append(current_calculated)
-        rims_object = execution(dc_sample/runs, 400000, True)
-        current_calculated = rims_object.current
-        current_2.append(current_calculated)
-        rims_object = execution(dc_sample/runs, 700000, True)
-        current_calculated = rims_object.current
-        current_3.append(current_calculated)
-        dc_list.append(dc_sample/runs)
+            if compare:
+                '''collect for Kedem'''
+                k_v = get_velocity(float(1/frequency), 0.8 * pow(10, -4),
+                                   2.5 * pow(10, -4),
+                                   0.25*ELECTRON_CHARGE, 0.05*ELECTRON_CHARGE, -0.5,
+                                   TEMPERATURE, 1 - float(dc))
 
+                k_i = get_current(k_v, NE, SIGMA, ELECTRON_CHARGE)
+                k_currents.append(k_i/10)
+        i_f += 1
+        plt.plot(dc_list, current_list, label='RIMS: '+str(frequency / 1000) + "KHz")
         if compare:
-            '''collect for Keden'''
-            k_v = get_velocity(float(1/frequency), 0.8 * pow(10, -4),
-                               2.5 * pow(10, -4),
-                               0.25*ELECTRON_CHARGE, 0.05*ELECTRON_CHARGE, -0.5,
-                               TEMPERATURE, 1 - float(dc_sample/runs))
-
-            k_i = get_current(k_v, NE, SIGMA, ELECTRON_CHARGE)
-            k_currents.append(k_i/10)
-
-
+            plt.plot(dc_list, k_currents, label='Kedem: '+str(frequency / 1000) + "KHz")
     percentage_progress(1, 1)
     print("\nSimulation finished after " + str(datetime.now() - start_time) + "\n")
-
-    '''Plotting graph, I as a function of DC for constant frequency'''
-    plt.figure(plot_uid)
-    plt.plot(dc_list, current_1, label=str(f_list[0]/1000)+"KHz", color=PURPLE)
-    plt.plot(dc_list, current_2, label=str(f_list[1]/1000)+"KHz", color=YELLOW)
-    plt.plot(dc_list, current_3, label=str(f_list[2]/1000)+"KHz", color=BLUE)
-
-    if compare:
-        plt.plot(dc_list, k_currents, label='Kedem exp', color=YELLOW)
-    plt.suptitle('RIMS: current changing over DC at different frequencies', fontsize=12, fontweight='bold')
+    plt.suptitle('RIMS: current changing over DC', fontsize=12, fontweight='bold')
     plt.xlabel(r"DC")
     plt.ylabel(r"I [AMP]")
     plt.legend(loc='upper left')
-
-    '''Adding min & max markers'''
-    # max_current = max(current_list)
-    # max_i = current_list.index(max_current)
-    # plt.plot(dc_list[max_i], max_current, 'g^')
-    # plt.text(dc_list[max_i], max_current, str(max_current))
-    #
-    # min_current = min(current_list)
-    # min_i = current_list.index(min_current)
-    # plt.plot(dc_list[min_i], min_current, 'rv')
-    # plt.text(dc_list[min_i], min_current, str(min_current))
 
     '''Zero current line'''
     plt.axhline(color='r')
@@ -374,7 +352,6 @@ def create_i_of_dc_comparison(frequency, compare):
     print('I_dc saved to main directory as ' + file_name)
     plt.close(plot_uid)
     return
-
 
 def create_i_of_f_comparison(dc, compare):
     """
@@ -482,7 +459,7 @@ def create_heat_map():
 
 headline_panel()
 
-# create_i_of_dc_comparison(frequency=1, compare=False)
+# create_i_of_dc_comparison([800000,600000], False)
 # create_i_of_f_comparison(0.6, True)
 # create_heat_map()
 execution(0, 0, False)

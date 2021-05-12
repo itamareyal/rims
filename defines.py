@@ -35,7 +35,7 @@ d_potential_mat = np.vstack((d_pos, d_neg))
 d_T = 1 / 600000
 d_t_vec = np.array([0.6 * d_T, d_T])
 debug_dict = {
-    "ion_selection"         : ION_LIST[4],  # 0=Pb+2, 1=K+, 2=Ca+2, 3=Na+, 4=e-
+    "ion_selection"         : (ION_LIST[4], diffusion_coefficient_dict[ION_LIST[4]]),  # 0=Pb+2, 1=K+, 2=Ca+2, 3=Na+, 4=e-
     "ratchet_number"        : 2,
     "L"                     : d_L,
     "a1"                    : 0.25,
@@ -57,17 +57,13 @@ TEMPERATURE = 293
 
 
 '''SIMULATION PARAMETERS'''
-DATA_CSV_FILE = 'ratchet1.csv'
-ALPHA = 0.5                             # amplitude factor for negative period of flashing ratchet
-FLASHING_MODES = [0, -ALPHA]
 BLANK_INT = 'blank'
-NUMBER_OF_SIMULATIONS = 10000
+NUMBER_OF_SIMULATIONS = 5000
 SIGMA = (500 * pow(10, -4)) * (50 * pow(10, -7))
 INTERVALS_FLASH_RATIO = 10
-GRADIENT_COEFFICIENT = 0.0005
-RESOLUTION = 1000
+RESOLUTION = 10000
 RATCHETS_IN_SYSTEM = 4
-POINTS = 600
+POINTS = 1000
 MIN_NUM_SPEEDS_FOR_AVG = 10
 YELLOW = '#c49000'
 PURPLE = '#892fba'

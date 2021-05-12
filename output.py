@@ -59,6 +59,7 @@ def create_log_file(rims_object, ion_subject):
     f.write("RIMS simulation log\n\n")
     f.write("\ttime created: " + str(rims_object.start_time) + "\n")
     f.write("\ttest duration: " + str(datetime.now() - rims_object.start_time) + "\n")
+    f.write("\tsimulated time: " + str(ion_subject.points * rims_object.flash_period) + "[sec]\n")
 
     f.write("\n\tparticles in the system: " + rims_object.ion + "\n")
     f.write("\tdiffusion coefficient: " + str(ion_subject.diffusion) + "[cm^2/sec]\n")
@@ -77,7 +78,7 @@ def create_log_file(rims_object, ion_subject):
     f.write("\tmeasurements per particle: " + str(ion_subject.points) + "\n")
     f.write("\tintervals (delta_t): " + str(ion_subject.interval) + "[sec]\n")
     f.write("\tfriction coefficient (gamma): " + str(ion_subject.gamma) + "\n")
-    f.write("\tresolution: " + str(rims_object.resolution) + "\n")
+    f.write("\tresolution: " + str(rims_object.resolution) + " (no. of dx along a single ratchet)\n")
     f.write("\tvelocity: " + str(rims_object.velocity) + "[cm/sec]\n")
     f.close()
 
@@ -92,15 +93,11 @@ def plot_potential_profile(rims_object):
     """
     plots and saves E,V profiles as function of x over 1 cycle
     :param rims_object: simulation instance
-    :param x: ratchet cycle x axis
-    :param V: potential calculations at x
-    :param E: -grad(V) at x
-    :param index: indexing the profile state
     """
     if not os.path.exists(rims_object.path_for_output):
         os.makedirs(rims_object.path_for_output)
     number_of_profiles = rims_object.potential_profile_mat.shape[0]
-    x = rims_object.x_space_vec
+    x = [dx * pow(10,4) for dx in rims_object.x_space_vec]
     fig, axs = plt.subplots(number_of_profiles)
     plt.suptitle('RIMS: Ratchet potential profiles', fontsize=14, fontweight='bold')
 
@@ -108,18 +105,43 @@ def plot_potential_profile(rims_object):
         axs[i_profile].plot(x, rims_object.potential_profile_mat[i_profile],
                             color=YELLOW, label="V(x) potential profile")
         axs[i_profile].tick_params(axis='y', labelcolor=YELLOW)
-
         ax2 = axs[i_profile].twinx()
         ax2.plot(x, rims_object.electric_field_mat[i_profile],
                             color=PURPLE, label=r"E(x) electric field = -$\nabla $V")
         ax2.tick_params(axis='y', labelcolor=PURPLE)
     text_kwargs = dict(fontsize=10, color=YELLOW, fontweight='bold')
-    fig.text(0.1, 0.91, 'V(x) potential profile', text_kwargs)
+    fig.text(0.1, 0.91, 'V(x) potential profile [v]', text_kwargs)
     text_kwargs = dict(fontsize=10, color=PURPLE, fontweight='bold')
-    fig.text(0.5, 0.91, r"E(x) electric field = -$\nabla $V", text_kwargs)
-    fig.tight_layout()
+    fig.text(0.5, 0.91, r"E(x) electric field = -$\nabla $V [v/cm]", text_kwargs)
+    axs[number_of_profiles-1].set_xlabel(r"X [$\mu $m]")
+
+    if number_of_profiles < 4:
+        fig.tight_layout()
     plt.savefig(rims_object.path_for_output + 'Ratchet potential profiles.jpeg')
     plt.close()
+    return
+
+def plot_average_speed_of_ions(rims_object, v_plot_list):
+    unique_id = create_unique_id()
+    plt.figure(unique_id)
+    x_axis = [cycle + 1 for cycle in range(len(v_plot_list))]
+    plt.plot(x_axis, v_plot_list)
+    plt.xlabel(r"Ratchet Cycle")
+    plt.ylabel(r"Particle Velocity [cm/sec]")
+    plt.suptitle("RIMS: Average speed of ions over ratchet cycles", fontsize=14, fontweight='bold')
+    save_plots(rims_object, 'Average speed of ions over ratchet cycles',unique_id)
+    return
+
+def plot_distribution_over_x_histogram(rims_object, x_plot_list):
+    plot_id = create_unique_id()
+    plt.figure(plot_id)
+    weights = np.ones_like(x_plot_list) / float(len(x_plot_list))
+    x_results_um = [x * np.power(10, 4) for x in x_plot_list]
+    plt.hist(x_results_um, weights=weights, bins=rims_object.resolution, label=r"X [$\mu $m]")
+    plt.ylabel('Density')
+    plt.xlabel(r'X [$\mu $m]')
+    plt.title(r"RIMS: Histogram of distribution x axis: $\rho $(x)", fontsize=14, fontweight='bold')
+    save_plots(rims_object, 'Distribution x axis histogram', plot_id)
     return
 
 def plot_potential_profile_leg(rims_object, x, V, E, index):
@@ -162,7 +184,7 @@ def save_plots(rims_object, name, fig_number):
     plt.figure(fig_number)
     plt.savefig(rims_object.path_for_output + name + '.jpeg')
     plt.close(fig_number)
-    print(name + ' saved to output plots.')
+    print('\n' + name + ' saved to output plots.')
     return
 
 

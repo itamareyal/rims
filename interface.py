@@ -43,7 +43,7 @@ def extract_data_from_interface():
     ratchet_number = input_check_int("Ratchet function number = ", [0, 1, 2])
     if ratchet_number != 0:
         if ratchet_number == 1:
-
+            '''In console ratchet functions'''
             print("Please describe the potential profile applied on the system.\n")
             print("                    _          ")
             print("        / |\         |         ")
@@ -64,7 +64,7 @@ def extract_data_from_interface():
             step = np.heaviside(x - a, 1)
             pos = f1 - step * f1 + step * f2
 
-        elif ratchet_number == 2:
+        else:
             print("Please enter ratchet sin wave parameters.\n")
             print("                    _          ")
             print("        / |\        _| a2[v]   ")
@@ -81,7 +81,7 @@ def extract_data_from_interface():
 
             x = np.linspace(0, L, num=RESOLUTION)
             pos = a1 * np.sin(2 * np.pi * x / L) + a2 * np.sin(4 * np.pi * x / L)
-        neg = np.multiply(pos, -ALPHA)
+        neg = np.multiply(pos, ALPHA)
         potential_mat = np.vstack((pos, neg))
 
         print("\nEnter ratchet flashing frequency in Hz: (can use factors of K,M,G)")
@@ -112,7 +112,7 @@ def extract_data_from_interface():
         tries = 0
         while dc < 0 or dc > 1:
             if tries > 0:
-                print("\tdc takes float values from (0-1)")
+                print("\tDC takes float values from (0-1)")
             try:
                 dc = float(input("DC = "))
             except ValueError:
@@ -122,19 +122,11 @@ def extract_data_from_interface():
         T = 1 / flash_frequency
         t_vec = np.array([dc * T, T])
 
-    else:                                                   # data from csv
+    else:  # data from csv
         L, t_vec, potential_mat = select_csv_file()
         x = np.linspace(0, L, num=potential_mat.shape[1])
 
-
     potential_profile = [L, x, t_vec, potential_mat]
-
-    # print("-------------------------------------------------------")
-    # print("             Step 3- Outputs selection")
-    # print("-------------------------------------------------------")
-    # print("\nEnter desired output combination:\n\t1)Histogram (about 30sec to generate)\n\t"
-    #       "2)Video (about 40min to generate)")
-    # output_selection = input_check_int("Enter your selection:", [1, 2])
 
     print("\n-------------------------------------------------------")
     print("             Starting simulation")
@@ -156,7 +148,6 @@ def ion_selection_panel():
     print("\t3) Calcium Ca+2")
     print("\t4) Sodium Na+")
     print("\t5) Electrons in Silicon")
-    print("\t6) debug")
     print("\nFor multiple ions, type comma between inputs")
 
     input_valid = False
@@ -176,9 +167,6 @@ def ion_selection_panel():
                 ion = ION_LIST[int(arg)-1]
                 diff = diffusion_coefficient_dict[ion]
                 ions_for_simulation_dict[ion] = diff
-
-            elif arg == '6': # debug
-                return int(arg)
 
             elif arg == '0': # manual entry
                 diff = input_check_float("Enter diffusion coefficient [cm^2/sec]:")
@@ -277,6 +265,6 @@ def load_data_from_csv(csv_file_path):
     mat_v = np.loadtxt(csv_file_path, skiprows=1, delimiter=',')        # potential profiles
     if mat_v.ndim==1:
         print("only 1 profile was detected. adding a second profile such that V2= -ALPHA*V1")
-        mat_v = np.vstack((mat_v, -ALPHA * mat_v))
+        mat_v = np.vstack((mat_v, ALPHA * mat_v))
 
     return scalar_x, vec_t, mat_v

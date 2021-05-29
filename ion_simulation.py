@@ -88,15 +88,11 @@ class ion:
     def simulate_ion(self):
         """
         simulate ion movement over number of iterations.
-        :return: location of the ion at the nd of the simulation.
         """
         self.intervals_count = 0
         relative_x0 = (self.arena_count * self.L) + self.loc
         while self.intervals_count < self.intervals_in_period:
-            # prev_loc = (self.arena_count * self.L) + self.loc
-            self.loc = ion.get_new_x(self)
-            # next_loc = (self.arena_count * self.L) + self.loc
-            # self.velocity_list.append(calculate_v(next_loc, prev_loc, self.interval))           # Each ion creates a velocity_list which includes all of the velocities sampled during the simulation
+            self.loc = self.get_new_x()
             self.intervals_count += 1
 
         self.absolute_final_loc = self.L * self.arena_count + self.loc

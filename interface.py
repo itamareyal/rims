@@ -163,16 +163,16 @@ def ion_selection_panel():
             user_input_split = [user_input]
         for arg in user_input_split:
             arg = arg.strip(' ')
-            if arg in ['1','2','3','4','5']:
+            if arg in ['1', '2', '3', '4', '5']:
                 ion = ION_LIST[int(arg)-1]
                 diff = diffusion_coefficient_dict[ion]
                 ions_for_simulation_dict[ion] = diff
 
-            elif arg == '0': # manual entry
+            elif arg == '0':  # manual entry
                 diff = input_check_float("Enter diffusion coefficient [cm^2/sec]:")
                 ion = 'manual_input'+str(manual_counter)
                 ions_for_simulation_dict[ion] = diff
-                manual_counter +=1
+                manual_counter += 1
 
             else:
                 print('object '+str(arg)+' not comprehensible, re-enter arguments')
@@ -236,7 +236,7 @@ def select_csv_file():
         exit()
     else:
         print("Select the number of the profile you wish load:")
-        file = valid_files[input_check_int("file number: ",range(1,len(valid_files)+1))-1]
+        file = valid_files[input_check_int("file number: ", range(1, len(valid_files)+1))-1]
     scalar_x, vec_t, mat_v = load_data_from_csv(folder + file)
     return scalar_x, vec_t, mat_v
 

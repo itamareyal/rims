@@ -55,38 +55,37 @@ def write_to_trace_file(rims_object, ion_subject):
 def create_log_file(rims_object):
     if not os.path.exists(rims_object.path_for_output):
         os.makedirs(rims_object.path_for_output)
-    f = open(rims_object.path_for_output + "RIMS simulation log.txt", "a")
-    f.write("RIMS simulation log\n\n")
-    f.write("\ttime created: " + str(rims_object.start_time) + "\n")
-    f.write("\ttest duration: " + str(datetime.now() - rims_object.start_time) + "\n")
-    f.write("\tsimulated time: " + str(rims_object.cycles_count * rims_object.flash_period) + "[sec]\n")
+    with open(rims_object.path_for_output + "RIMS simulation log.txt", "a") as f:
+        f.write("RIMS simulation log\n\n")
+        f.write("\ttime created: " + str(rims_object.start_time) + "\n")
+        f.write("\ttest duration: " + str(datetime.now() - rims_object.start_time) + "\n")
+        f.write("\tsimulated time: " + str(rims_object.cycles_count * rims_object.flash_period) + "[sec]\n")
 
-    f.write("\n\tparticles in the system: " + rims_object.ion + "\n")
-    f.write("\tdiffusion coefficient: " + str(rims_object.diffusion) + "[cm^2/sec]\n")
-    f.write("\ttemperature: " + str(TEMPERATURE) + "[k]\n")
+        f.write("\n\tparticles in the system: " + rims_object.ion + "\n")
+        f.write("\tdiffusion coefficient: " + str(rims_object.diffusion) + "[cm^2/sec]\n")
+        f.write("\ttemperature: " + str(TEMPERATURE) + "[k]\n")
 
-    f.write("\nRatchet potential profile\n")
-    f.write("\twidth: " + str(rims_object.L * pow(10, 4)) + "[um]\n")
-    f.write("\tfrequency: " + str(rims_object.flash_frequency) + "[Hz]\n")
-    f.write("\tperiod: " + str(rims_object.flash_period) + "[sec]\n")
+        f.write("\nRatchet potential profile\n")
+        f.write("\twidth: " + str(rims_object.L * pow(10, 4)) + "[um]\n")
+        f.write("\tfrequency: " + str(rims_object.flash_frequency) + "[Hz]\n")
+        f.write("\tperiod: " + str(rims_object.flash_period) + "[sec]\n")
 
-    if len(rims_object.time_vec) == 2:                              # for 2 state ratchet
-        f.write("\tduty cycle: " + str(rims_object.time_vec[0] * rims_object.flash_frequency) + "\n")
+        if len(rims_object.time_vec) == 2:                              # for 2 state ratchet
+            f.write("\tduty cycle: " + str(rims_object.time_vec[0] * rims_object.flash_frequency) + "\n")
 
-    f.write("\nSimulation settings\n")
-    f.write("\tparticles simulated: " + str(rims_object.number_of_simulations) + "\n")
-    f.write("\tmeasurements per particle: " + str(rims_object.cycles_count * rims_object.intervals_in_period) + "\n")
-    f.write("\tintervals (delta_t): " + str(rims_object.interval) + "[sec]\n")
-    f.write("\tfriction coefficient (gamma): " + str(rims_object.gamma) + "\n")
-    f.write("\tresolution: " + str(rims_object.resolution) + " (no. of dx along a single ratchet)\n")
-    f.write("\tvelocity: " + str(rims_object.velocity) + "[cm/sec]\n")
+        f.write("\nSimulation settings\n")
+        f.write("\tnumber of particles simulated: " + str(rims_object.number_of_simulations) + "\n")
+        f.write("\tmeasurements per particle: " + str(rims_object.cycles_count * rims_object.intervals_in_period) + "\n")
+        f.write("\tintervals (delta_t): " + str(rims_object.interval) + "[sec]\n")
+        f.write("\tfriction coefficient (gamma): " + str(rims_object.gamma) + "[eVsec/cm^2]\n")
+        f.write("\tresolution: " + str(rims_object.resolution) + " (no. of dx along a single ratchet)\n")
+        f.write("\tvelocity: " + str(rims_object.velocity) + "[cm/sec]\n")
     f.close()
 
-
 def print_log_file(rims_object):
-    f = open(rims_object.path_for_output+"RIMS simulation log.txt", "r")
-    log = f.read()
-    print(log)
+    with open(rims_object.path_for_output+"RIMS simulation log.txt", "r") as f:
+        log = f.read()
+        print(log)
     f.close()
 
 def plot_potential_profile(rims_object):
@@ -181,8 +180,8 @@ def save_plots(rims_object, name, fig_number):
 
 def create_unique_id():
     now = datetime.now()
-    c_time = now.ctime()
-    uid = c_time.replace(':', '').replace(' ', '_')
+    uid = str(now.strftime("%x")).replace('/', '-')+'_' \
+        + str(now.strftime("%X")).replace(':', '')
     return uid
 
 

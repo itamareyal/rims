@@ -20,26 +20,30 @@ import numpy as np
 ION_LIST = ["Lead Pb+2", "Potassium K+", "Calcium Ca+2", "Sodium Na+", "Electrons in Silicon"]
 
 diffusion_coefficient_dict = {                      # units [cm^2/sec]
+    # Taken from https://www.aqion.de/site/diffusion-coefficients
     "Lead Pb+2"             : 0.945 * pow(10, -5),
     "Potassium K+"          : 1.960 * pow(10, -5),
     "Calcium Ca+2"          : 0.793 * pow(10, -5),
     "Sodium Na+"            : 1.330 * pow(10, -5),
-    "Electrons in Silicon"  : 0.00025
+    # Taken from https://pubs.acs.org/doi/suppl/10.1021/acs.nanolett.7b03118/suppl_file/nl7b03118_si_001.pdf
+    "Electrons in Silicon"  : 3 * pow(10, -4)
 }
-
+d_alpha = -1
+d_dc = 0.8
+d_f = 600_000
+d_T = 1 / d_f
 d_L = 0.8 * pow(10, -4)
-d_x = np.linspace(0, d_L, num=1000)
-d_pos = 0.25 * np.sin(2 * np.pi * d_x / d_L) + 0.05 * np.sin(4 * np.pi * d_x / d_L)
-d_neg = np.multiply(d_pos, -0.5)
+d_a1 = 0.25
+d_a2 = 0.05
+d_x = np.linspace(start=0, stop=d_L, num=1000)
+d_pos = d_a1 * np.sin(2 * np.pi * d_x / d_L) + d_a2 * np.sin(4 * np.pi * d_x / d_L)
+d_neg = np.multiply(d_pos, d_alpha)
 d_potential_mat = np.vstack((d_pos, d_neg))
-d_T = 1 / 600000
-d_t_vec = np.array([0.6 * d_T, d_T])
+d_t_vec = np.array([d_dc * d_T, d_T])
 debug_dict = {
     "ion_selection"         : (ION_LIST[4], diffusion_coefficient_dict[ION_LIST[4]]),  # 0=Pb+2, 1=K+, 2=Ca+2, 3=Na+, 4=e-
     "ratchet_number"        : 2,
     "L"                     : d_L,
-    "a1"                    : 0.25,
-    "a2"                    : 0.05,
     "potential_profile"     : [d_L, d_x, d_t_vec, d_potential_mat],
     "flash_number"          : 1,
     "flash_mode"            : -0.5,
@@ -52,16 +56,20 @@ ELECTRON_CHARGE = 1.6 * pow(10, -19)
 NE = 1 * pow(10, 15)
 BOLTZMANN_CONSTANT = 8.617333262 * pow(10, -5)
 BOLTZMANN_CONSTANT_J = 1.380649 * pow(10, -23)
-AVOGADRO_NUMBER = 6.0221409 * np.power(np.e, 23)
 TEMPERATURE = 293
 
 
 '''SIMULATION PARAMETERS'''
+ALPHA = -1
 BLANK_INT = 'blank'
-NUMBER_OF_SIMULATIONS = 5000
+NUMBER_OF_SIMULATIONS = 3000
+STEADY_STATE_PERCENT_MARGIN = 0.05
+IONS_PER_THREAD = 100
+NUMBER_OF_THREADS = int(NUMBER_OF_SIMULATIONS/IONS_PER_THREAD)
+MAX_CYCLES = 20
 SIGMA = (500 * pow(10, -4)) * (50 * pow(10, -7))
 INTERVALS_FLASH_RATIO = 10
-RESOLUTION = 10000
+RESOLUTION = 1000
 RATCHETS_IN_SYSTEM = 4
 POINTS = 1000
 MIN_NUM_SPEEDS_FOR_AVG = 10

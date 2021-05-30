@@ -21,12 +21,12 @@ from defines import *
 ----------------------------------------------------------------------'''
 
 
-def create_trace_file(rims_object, ion_subject):
+def create_trace_file(rims_object):
     if not os.path.exists(rims_object.path_for_output):
         os.makedirs(rims_object.path_for_output)
     with open(rims_object.path_for_output + 'simulation trace.csv', newline='', mode='a') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(['X0[cm]', 'X' + str(ion_subject.points) + '[cm]'])
+        writer.writerow(['X0[cm]', 'X' + str(POINTS) + '[cm]'])
 
 
 def create_test_csv(rims_object):
@@ -52,41 +52,40 @@ def write_to_trace_file(rims_object, ion_subject):
         writer.writerow([ion_subject.x0, ion_subject.L * ion_subject.arena_count + ion_subject.loc])
 
 
-def create_log_file(rims_object, ion_subject):
+def create_log_file(rims_object):
     if not os.path.exists(rims_object.path_for_output):
         os.makedirs(rims_object.path_for_output)
-    f = open(rims_object.path_for_output + "RIMS simulation log.txt", "a")
-    f.write("RIMS simulation log\n\n")
-    f.write("\ttime created: " + str(rims_object.start_time) + "\n")
-    f.write("\ttest duration: " + str(datetime.now() - rims_object.start_time) + "\n")
-    f.write("\tsimulated time: " + str(ion_subject.points * rims_object.flash_period) + "[sec]\n")
+    with open(rims_object.path_for_output + "RIMS simulation log.txt", "a") as f:
+        f.write("RIMS simulation log\n\n")
+        f.write("\ttime created: " + str(rims_object.start_time) + "\n")
+        f.write("\ttest duration: " + str(datetime.now() - rims_object.start_time) + "\n")
+        f.write("\tsimulated time: " + str(rims_object.cycles_count * rims_object.flash_period) + "[sec]\n")
 
-    f.write("\n\tparticles in the system: " + rims_object.ion + "\n")
-    f.write("\tdiffusion coefficient: " + str(ion_subject.diffusion) + "[cm^2/sec]\n")
-    f.write("\ttemperature: " + str(TEMPERATURE) + "[k]\n")
+        f.write("\n\tparticles in the system: " + rims_object.ion + "\n")
+        f.write("\tdiffusion coefficient: " + str(rims_object.diffusion) + "[cm^2/sec]\n")
+        f.write("\ttemperature: " + str(TEMPERATURE) + "[k]\n")
 
-    f.write("\nRatchet potential profile\n")
-    f.write("\twidth: " + str(ion_subject.L * pow(10, 4)) + "[um]\n")
-    f.write("\tfrequency: " + str(ion_subject.flash_frequency) + "[Hz]\n")
-    f.write("\tperiod: " + str(ion_subject.flash_period) + "[sec]\n")
+        f.write("\nRatchet potential profile\n")
+        f.write("\twidth: " + str(rims_object.L * pow(10, 4)) + "[um]\n")
+        f.write("\tfrequency: " + str(rims_object.flash_frequency) + "[Hz]\n")
+        f.write("\tperiod: " + str(rims_object.flash_period) + "[sec]\n")
 
-    if len(rims_object.time_vec) == 2:                              # for 2 state ratchet
-        f.write("\tduty cycle: " + str(rims_object.time_vec[0] * rims_object.flash_frequency) + "\n")
+        if len(rims_object.time_vec) == 2:                              # for 2 state ratchet
+            f.write("\tduty cycle: " + str(rims_object.time_vec[0] * rims_object.flash_frequency) + "\n")
 
-    f.write("\nSimulation settings\n")
-    f.write("\tparticles simulated: " + str(rims_object.number_of_simulations) + "\n")
-    f.write("\tmeasurements per particle: " + str(ion_subject.points) + "\n")
-    f.write("\tintervals (delta_t): " + str(ion_subject.interval) + "[sec]\n")
-    f.write("\tfriction coefficient (gamma): " + str(ion_subject.gamma) + "\n")
-    f.write("\tresolution: " + str(rims_object.resolution) + " (no. of dx along a single ratchet)\n")
-    f.write("\tvelocity: " + str(rims_object.velocity) + "[cm/sec]\n")
+        f.write("\nSimulation settings\n")
+        f.write("\tnumber of particles simulated: " + str(rims_object.number_of_simulations) + "\n")
+        f.write("\tmeasurements per particle: " + str(rims_object.cycles_count * rims_object.intervals_in_period) + "\n")
+        f.write("\tintervals (delta_t): " + str(rims_object.interval) + "[sec]\n")
+        f.write("\tfriction coefficient (gamma): " + str(rims_object.gamma) + "[eVsec/cm^2]\n")
+        f.write("\tresolution: " + str(rims_object.resolution) + " (no. of dx along a single ratchet)\n")
+        f.write("\tvelocity: " + str(rims_object.velocity) + "[cm/sec]\n")
     f.close()
 
-
 def print_log_file(rims_object):
-    f = open(rims_object.path_for_output+"RIMS simulation log.txt", "r")
-    log = f.read()
-    print(log)
+    with open(rims_object.path_for_output+"RIMS simulation log.txt", "r") as f:
+        log = f.read()
+        print(log)
     f.close()
 
 def plot_potential_profile(rims_object):
@@ -97,22 +96,22 @@ def plot_potential_profile(rims_object):
     if not os.path.exists(rims_object.path_for_output):
         os.makedirs(rims_object.path_for_output)
     number_of_profiles = rims_object.potential_profile_mat.shape[0]
-    x = [dx * pow(10,4) for dx in rims_object.x_space_vec]
+    x = [dx * pow(10, 4) for dx in rims_object.x_space_vec]
     fig, axs = plt.subplots(number_of_profiles)
     plt.suptitle('RIMS: Ratchet potential profiles', fontsize=14, fontweight='bold')
 
     for i_profile in range(number_of_profiles):
-        axs[i_profile].plot(x, rims_object.potential_profile_mat[i_profile],
-                            color=YELLOW, label="V(x) potential profile")
+        y = [dy for dy in rims_object.potential_profile_mat[i_profile]]
+        axs[i_profile].plot(x, y, color=YELLOW, label="V(x) potential profile")
         axs[i_profile].tick_params(axis='y', labelcolor=YELLOW)
         ax2 = axs[i_profile].twinx()
-        ax2.plot(x, rims_object.electric_field_mat[i_profile],
-                            color=PURPLE, label=r"E(x) electric field = -$\nabla $V")
+        y = [dy * pow(10, -4) for dy in rims_object.electric_field_mat[i_profile]]
+        ax2.plot(x, y, color=PURPLE, label=r"E(x) electric field = -$\nabla $V")
         ax2.tick_params(axis='y', labelcolor=PURPLE)
     text_kwargs = dict(fontsize=10, color=YELLOW, fontweight='bold')
     fig.text(0.1, 0.91, 'V(x) potential profile [v]', text_kwargs)
     text_kwargs = dict(fontsize=10, color=PURPLE, fontweight='bold')
-    fig.text(0.5, 0.91, r"E(x) electric field = -$\nabla $V [v/cm]", text_kwargs)
+    fig.text(0.5, 0.91, r"E(x) electric field = -$\nabla $V [v/$\mu $m]", text_kwargs)
     axs[number_of_profiles-1].set_xlabel(r"X [$\mu $m]")
 
     if number_of_profiles < 4:
@@ -133,6 +132,11 @@ def plot_average_speed_of_ions(rims_object, v_plot_list):
     return
 
 def plot_distribution_over_x_histogram(rims_object, x_plot_list):
+    """
+    :param x_plot_list: array of final absolute locations of ions
+    :param rims_object: simulation object
+    """
+    '''Infinite system'''
     plot_id = create_unique_id()
     plt.figure(plot_id)
     weights = np.ones_like(x_plot_list) / float(len(x_plot_list))
@@ -140,41 +144,27 @@ def plot_distribution_over_x_histogram(rims_object, x_plot_list):
     plt.hist(x_results_um, weights=weights, bins=rims_object.resolution, label=r"X [$\mu $m]")
     plt.ylabel('Density')
     plt.xlabel(r'X [$\mu $m]')
-    plt.title(r"RIMS: Histogram of distribution x axis: $\rho $(x)", fontsize=14, fontweight='bold')
-    save_plots(rims_object, 'Distribution x axis histogram', plot_id)
-    return
+    plt.title(r"RIMS: Histogram of distribution in infinite system: $\rho $(x)", fontsize=14, fontweight='bold')
+    save_plots(rims_object, 'Distribution x axis histogram infinite', plot_id)
+    plt.close(plot_id)
 
-def plot_potential_profile_leg(rims_object, x, V, E, index):
-    """
-    plots and saves E,V profiles as function of x over 1 cycle
-    :param rims_object: simulation instance
-    :param x: ratchet cycle x axis
-    :param V: potential calculations at x
-    :param E: -grad(V) at x
-    :param index: indexing the profile state
-    """
-    if not os.path.exists(rims_object.path_for_output):
-        os.makedirs(rims_object.path_for_output)
-
-    fig, ax1 = plt.subplots()
-    plt.suptitle('RIMS: Ratchet potential profile mode='+str(index), fontsize=14, fontweight='bold')
-
-    color = YELLOW
-    ax1.set_xlabel(r"X [$\mu $m]")
-    ax1.set_ylabel(r"V [v]", color=color)
-    ax1.plot(x, V, color=color, label="V(x) potential profile")
-    ax1.tick_params(axis='y', labelcolor=color)
-    plt.legend(loc="lower right")
-    ax2 = ax1.twinx()
-
-    color = PURPLE
-    ax2.set_ylabel(r"E [v/cm]", color=color)
-    ax2.plot(x, E, color=color, label=r"E(x) electric field = -$\nabla $V")
-    ax2.tick_params(axis='y', labelcolor=color)
-    plt.legend(loc="lower left")
-    fig.tight_layout()
-    plt.savefig(rims_object.path_for_output + 'Ratchet potential profile ' + str(index)+'.jpeg')
-    plt.close()
+    '''keeping final location in range [0, num of ratchets times arena size] to view steady state'''
+    plot_id = create_unique_id()
+    plt.figure(plot_id)
+    x_periodic_system = []
+    for x in x_plot_list:
+        x_periodic = x
+        while x_periodic > RATCHETS_IN_SYSTEM * rims_object.L:
+            x_periodic -= RATCHETS_IN_SYSTEM * rims_object.L
+        while x_periodic < 0:
+            x_periodic += RATCHETS_IN_SYSTEM * rims_object.L
+        x_periodic_system.append(x_periodic)
+    x_results_um = [x * np.power(10, 4) for x in x_periodic_system]
+    plt.hist(x_results_um, weights=weights, bins=rims_object.resolution, label=r"X [$\mu $m]")
+    plt.ylabel('Density')
+    plt.xlabel(r'X [$\mu $m]')
+    plt.title(r"RIMS: Histogram of distribution in periodic system: $\rho $(x)", fontsize=14, fontweight='bold')
+    save_plots(rims_object, 'Distribution x axis histogram periodic', plot_id)
     return
 
 
@@ -190,13 +180,13 @@ def save_plots(rims_object, name, fig_number):
 
 def create_unique_id():
     now = datetime.now()
-    c_time = now.ctime()
-    uid = c_time.replace(':', '').replace(' ', '_')
+    uid = str(now.strftime("%x")).replace('/', '-')+'_' \
+        + str(now.strftime("%X")).replace(':', '')
     return uid
 
 
 def percentage_progress(n, N):
-    progress = n * 100 / int(N)
+    progress = int(n * 100) / int(N)
     sys.stdout.write("\r%d%%" % progress)
     sys.stdout.flush()
 

@@ -18,48 +18,33 @@ from current_calc import *
 ----------------------------------------------------------------------'''
 
 class ion:
-    def __init__(self, diffusion, L, t_vec, E, path):
+    def __init__(self, rims):
         """
         Instance holding ion under test
         """
         '''ratchet attributes'''
-        self.diffusion = diffusion
-        self.electric_field_mat = E
-        self.flash_frequency = 1 / t_vec[-1]
-        self.flash_period = t_vec[-1]
-        self.time_vec = t_vec
-        self.L = L
+        self.diffusion = rims.diffusion
+        self.electric_field_mat = rims.electric_field_mat
+        self.time_vec = rims.time_vec
+        self.flash_frequency = rims.flash_frequency
+        self.flash_period = rims.flash_period
+        self.intervals_in_period = rims.intervals_in_period
+        self.L = rims.L
 
         '''simulation attributes'''
-        # self.ion = ion_subject
+        self.ion = rims.ion
         self.loc = random.uniform(0, self.L)
         self.x0 = self.loc
         self.intervals_count = 0
         self.points = POINTS
         self.arena_count = 0
-        self.path = path
+        self.path = rims.path_for_output
 
         '''result attributes'''
+        self.absolute_final_loc = None
         self.velocity = 0
-        self.arena = -1
-        self.interval = -1
-        self.num_of_intervals_for_current = -1
-        self.gamma = -1
-        self.steady_state_velocity = -1
-        self.steady_state = False
-        self.velocity_list = []
-
-    def get_num_of_intervals_for_current(self):
-        self.num_of_intervals_for_current = int(self.flash_period / self.interval)
-
-    def get_intervals(self):
-        critical_t = ((1 / INTERVALS_FLASH_RATIO) * self.L) ** 2 / (2 * self.diffusion)
-        while critical_t > self.flash_period / INTERVALS_FLASH_RATIO:
-            critical_t /= INTERVALS_FLASH_RATIO
-        self.interval = critical_t
-
-    def get_gamma(self):
-        self.gamma = BOLTZMANN_CONSTANT * TEMPERATURE / self.diffusion
+        self.interval = rims.interval
+        self.gamma = rims.gamma
 
     def electric_force(self, x):
         index_in_array = int(x * self.electric_field_mat.shape[1] / self.L)
@@ -100,33 +85,20 @@ class ion:
             self.arena_count -= 1
         return new_x
 
-
-    def simulate_ion(self, number_of_cycles_per_ion):
+    def simulate_ion(self):
         """
         simulate ion movement over number of iterations.
-        :return: location of the ion at the nd of the simulation.
         """
-        ion.get_intervals(self)
-        ion.get_num_of_intervals_for_current(self)
-        ion.get_gamma(self)
-
-        while self.intervals_count <= max(number_of_cycles_per_ion * self.num_of_intervals_for_current, self.points):
-            old_location = (self.arena_count * self.L) + self.loc
-            self.loc = ion.get_new_x(self)
-            new_location = (self.arena_count * self.L) + self.loc
-            self.velocity_list.append(calculate_v(new_location, old_location, self.interval))           # Each ion creates a velocity_list which includes all of the velocities sampled during the simulation
+        self.intervals_count = 0
+        relative_x0 = (self.arena_count * self.L) + self.loc
+        while self.intervals_count < self.intervals_in_period:
+            self.loc = self.get_new_x()
             self.intervals_count += 1
 
-        ret_val = self.L * self.arena_count + self.loc
+        self.absolute_final_loc = self.L * self.arena_count + self.loc
+        self.velocity = (self.absolute_final_loc - relative_x0) * self.flash_frequency
+        return
 
-        '''keeping final location in range [0, num of ratchets times arena size] to view steady state'''
-
-        # while ret_val > RATCHETS_IN_SYSTEM * self.L:
-        #     ret_val -= RATCHETS_IN_SYSTEM * self.L
-        # while ret_val < 0:
-        #     ret_val += RATCHETS_IN_SYSTEM * self.L
-        # calculate group number
-        return ret_val
 
 
 

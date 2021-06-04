@@ -41,7 +41,8 @@ d_neg = np.multiply(d_pos, d_alpha)
 d_potential_mat = np.vstack((d_pos, d_neg))
 d_t_vec = np.array([d_dc * d_T, d_T])
 debug_dict = {
-    "ion_selection"         : (ION_LIST[4], diffusion_coefficient_dict[ION_LIST[4]]),  # 0=Pb+2, 1=K+, 2=Ca+2, 3=Na+, 4=e-
+    '''0=Pb+2, 1=K+, 2=Ca+2, 3=Na+, 4=e-'''
+    "ion_selection"         : (ION_LIST[4], diffusion_coefficient_dict[ION_LIST[4]]),
     "ratchet_number"        : 2,
     "L"                     : d_L,
     "potential_profile"     : [d_L, d_x, d_t_vec, d_potential_mat],
@@ -69,6 +70,7 @@ NUMBER_OF_THREADS = int(NUMBER_OF_SIMULATIONS/IONS_PER_THREAD)
 MAX_CYCLES = 20
 SIGMA = (500 * pow(10, -4)) * (50 * pow(10, -7))
 INTERVALS_FLASH_RATIO = 10
+INTERVALS_FLASH_RATIO_ELECTRONS = 50
 RESOLUTION = 1000
 RATCHETS_IN_SYSTEM = 4
 POINTS = 1000

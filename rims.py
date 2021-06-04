@@ -76,6 +76,7 @@ class Rims:
         self.x_results = []
         self.velocity = 0
         self.current = 0
+        self.css = 0
 
     def create_ion(self):
         """
@@ -96,7 +97,7 @@ class Rims:
 
     def get_intervals(self):
         if self.ion == "Electrons in Silicon":
-            return self.flash_period / 50
+            return self.flash_period / INTERVALS_FLASH_RATIO_ELECTRONS
         critical_t = ((1 / INTERVALS_FLASH_RATIO) * self.L) ** 2 / (2 * self.diffusion)
         while critical_t > self.flash_period / INTERVALS_FLASH_RATIO:
             critical_t /= INTERVALS_FLASH_RATIO
@@ -118,6 +119,8 @@ class Rims:
             discrepancies += 1
 
         if discrepancies <= num_discrepancies_allowed:
+            if not self.steady_state:
+                self.css = self.cycles_count
             self.steady_state = True
         return
 
@@ -148,7 +151,7 @@ class Rims:
         rims_v = []
 
         '''Main simulation loop'''
-        while (not self.steady_state) and (self.cycles_count < MAX_CYCLES):
+        while self.cycles_count < MAX_CYCLES:
             if not self.fast_mode:
                 percentage_progress(self.cycles_count, MAX_CYCLES)
             rims_v.append(self.get_velocity_over_cycle())
@@ -159,7 +162,7 @@ class Rims:
             percentage_progress(1, 1)
             print('\n')
             if self.steady_state:
-                print('Steady state reached after '+str(self.cycles_count)+' ratchet cycles')
+                print('Steady state reached after '+str(self.css)+' ratchet cycles')
             else:
                 print('Steady state NOT reached after '+str(self.cycles_count)+' ratchet cycles')
                 print('Maximal number of cycles can be edited in defines.py module')

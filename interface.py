@@ -81,7 +81,10 @@ def extract_data_from_interface():
 
             x = np.linspace(0, L, num=RESOLUTION)
             pos = a1 * np.sin(2 * np.pi * x / L) + a2 * np.sin(4 * np.pi * x / L)
-        neg = np.multiply(pos, ALPHA)
+        print("Select relative amplitude for the negative profile.\nMeaning V- = V+ * -ALPHA")
+        print("Enter ALPHA as positive float or integer")
+        alpha = -abs(input_check_float("\tALPHA = "))
+        neg = np.multiply(pos, alpha)
         potential_mat = np.vstack((pos, neg))
 
         print("\nEnter ratchet flashing frequency in Hz: (can use factors of K,M,G)")
@@ -223,16 +226,17 @@ def select_csv_file():
         os.makedirs(folder)
 
     items = os.listdir(folder)
-    i = 1
     valid_files = []
     print("\nPotential profiles csv/txt files found in folder '"+folder+"':")
-    for entry in items:
+    for i, entry in enumerate(items, 1):
         if os.path.isfile(os.path.join(folder, entry)) and entry.endswith('csv') or entry.endswith('txt'):
             print(str(i)+') ' + entry)
-            i+=1
             valid_files.append(entry)
-    if len(valid_files)==0:
+    if len(valid_files) == 0:
         print("\nNo .csv or .txt files found in "+folder)
+        print("Please refer to README for more details on the csv ratchet parameter file")
+        print("Save a csv parameter file to "+folder+" and relaunch RIMS")
+        input("press ENTER to exit RIMS...")
         exit()
     else:
         print("Select the number of the profile you wish load:")
@@ -244,26 +248,15 @@ def select_csv_file():
 def load_data_from_csv(csv_file_path):
     """
     :param csv_file_path - path to a ratchet profile setting file set as follows
-    x, t0, t1... tn
-    v00, v01, v02... v0n
-    v10, v11, v12... v1n
-    ...
-    vk0, vk1, vk2... vkn
-
-    x   = length of the potential profile [um]
-    ti  = absolute time when vi switches to vi+1 [SEC]
-    tn  = time period of the whole ratchet marked T
-    k+1 = number of different potential profile
-    vi  = vector describing the shape of potential profile i [volt]
-
-    NOTE: all potential profiles must be of the same length and same number of points
+    Loads csv pre-saved ratchet parameter file. Refer to README for more details on the csv format
     """
     vec_header = np.loadtxt(csv_file_path, max_rows=1, delimiter=',')   # holds the first data row
     scalar_x = vec_header[0] * pow(10, -4)                              # width of the profile
     vec_t = vec_header[1:]                                              # timings vector
     vec_t = np.array([t * pow(10, -6) for t in vec_t])
     mat_v = np.loadtxt(csv_file_path, skiprows=1, delimiter=',')        # potential profiles
-    if mat_v.ndim==1:
+    '''In case only one profile was detected in the file'''
+    if mat_v.ndim == 1:
         print("only 1 profile was detected. adding a second profile such that V2= -ALPHA*V1")
         mat_v = np.vstack((mat_v, ALPHA * mat_v))
 

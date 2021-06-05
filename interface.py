@@ -21,7 +21,7 @@ def headline_panel():
     print("-------------------------------------------------------")
     print("     RIMS - Ratchet based Ion Movement Simulator")
     print("-------------------------------------------------------")
-    print("For instructions, please refer to the user manual text")
+    print("For instructions, please refer to the README file\n")
     return
 
 def execution_rerun_panel():
@@ -32,6 +32,14 @@ def execution_rerun_panel():
     if rerun == 'y':
         return True
     return False
+
+def extract_enable_video():
+    print("Add video output?\n1)Yes\n2)No")
+    vid_num = input_check_int("Select 1 or 2 = ", [1, 2])
+    if vid_num == 1:
+        return True
+    return False
+
 
 def extract_data_from_interface():
 

@@ -13,12 +13,110 @@ from datetime import datetime
 import os
 import csv
 import sys
+import cv2
+from PIL import Image
 from defines import *
 
 
 '''----------------------------------------------------------------------
                             IMPLEMENTATION
 ----------------------------------------------------------------------'''
+
+def create_video_of_histograms(frame_mat, ion_dict):
+    print('\n-------------------------------------------------------\n')
+    print('Generating video...')
+    frame_folder = r'Video outputs'
+    if not os.path.exists(frame_folder):
+        os.makedirs(frame_folder)
+    for cycle in range(MAX_CYCLES):
+        plt.figure(cycle)
+        max_x = np.max(frame_mat) * pow(10, 4)
+        min_x = np.min(frame_mat) * pow(10, 4)
+        plt.ylim(0, 0.025)
+        plt.xlim(min_x, max_x)
+        for i_ion, ion in enumerate(ion_dict.items()):
+            percentage_progress(cycle * len(ion_dict.items()) + i_ion,
+                                MAX_CYCLES * len(ion_dict.items()))
+            x_results = frame_mat[i_ion][cycle]
+            x_results_um = [dx * pow(10, 4) for dx in x_results]
+            weights = np.ones_like(x_results_um) / float(len(x_results_um))
+            plt.hist(x_results_um, weights=weights, bins=RESOLUTION, label=str(ion[0]))
+        plt.ylabel('Density')
+        plt.xlabel(r'X [$\mu $m]')
+        plt.title(r"RIMS: Video of distribution x axis: $\rho $(x,t)", fontsize=12, fontweight='bold')
+        plt.suptitle('ratchet cycle = ' + str(cycle), fontsize=10)
+
+        file_name = 'cycle_' + str(cycle)
+
+        plt.legend(loc='upper left')
+        plt.savefig(frame_folder + '/' + file_name + '.jpeg')
+        plt.close(cycle)
+    video_name = str(create_unique_id()) + ' Distribution video.avi'
+    generate_video_from_frames(frame_folder + r'/', video_name)
+    percentage_progress(1, 1)
+    print("\nVideo saved to " + frame_folder + " as " + video_name)
+
+def generate_video_from_frames(path_to_frames, title):
+    """
+    Resize imgs to fit video. calls the video generation function.
+    :param path_to_frames: folder containing all histogram figures
+    :param title: name of video file to be generated
+    """
+    os.chdir(path_to_frames)
+    mean_height = 0
+    mean_width = 0
+    num_of_images = len(os.listdir('.'))
+
+    for file in os.listdir('.'):
+        if file.endswith(".jpg") or file.endswith(".jpeg") or file.endswith("png") or file.endswith("JPEG"):
+            im = Image.open(file)
+            width, height = im.size
+            mean_width += width
+            mean_height += height
+
+    mean_width = int(mean_width / num_of_images)
+    mean_height = int(mean_height / num_of_images)
+
+    for file in os.listdir('.'):
+        if file.endswith(".jpg") or file.endswith(".jpeg") or file.endswith("png") or file.endswith("JPEG"):
+            im = Image.open(file)
+            # resizing
+            imResize = im.resize((mean_width, mean_height), Image.ANTIALIAS)
+            imResize.save(file, 'JPEG', quality=95)
+    release_video(title)
+    os.chdir('..')
+
+def release_video(title):
+    image_folder = '.'
+    video_name = title
+
+    images = [img for img in os.listdir(image_folder)
+              if img.endswith(".jpg") or
+              img.endswith(".jpeg") or
+              img.endswith(".JPEG") or
+              img.endswith(".PNG") or
+              img.endswith("png")]
+
+    images = sorted(images, key=sort_by_title)
+    frame = cv2.imread(os.path.join(image_folder, images[0]))
+
+    # setting the frame width, height width
+    height, width, layers = frame.shape
+
+    video = cv2.VideoWriter(video_name, 0, 1, (width, height))
+
+    # Appending the images to the video one by one
+    for image in images:
+        video.write(cv2.imread(os.path.join(image_folder, image)))
+
+    # De-allocating memories taken for window creation
+    cv2.destroyAllWindows()
+    video.release()  # releasing the video generated
+
+def sort_by_title(x):
+    num = x.split('.')[0]
+    num = num.split('_')[1]
+    return int(num)
 
 
 def create_trace_file(rims_object):

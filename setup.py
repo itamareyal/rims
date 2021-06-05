@@ -23,7 +23,7 @@ if sys.platform == "win32":
 options = {
     "build_exe": {
         # exclude all backends except numpy & matplotlib
-        "excludes": ["gtk", "PyQt4", "PyQt5", "tkinter", "pandas", "tcl", "sympy", "PIL", "pgk_resources"]
+        "excludes": ["gtk", "PyQt4", "PyQt5", "tkinter", "pandas", "tcl", "sympy", "pgk_resources"]
     }
 }
 

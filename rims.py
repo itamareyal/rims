@@ -74,6 +74,7 @@ class Rims:
         self.ions_lst = [Rims.create_ion(self) for i in range(NUMBER_OF_SIMULATIONS)]
         '''result attributes'''
         self.x_results = []
+        self.frames = np.zeros(shape=(MAX_CYCLES+1, NUMBER_OF_SIMULATIONS+1))
         self.velocity = 0
         self.current = 0
         self.css = 0
@@ -133,9 +134,10 @@ class Rims:
 
     def get_velocity_over_cycle(self):
         cycle_v = []
-        for ion_subject in self.ions_lst:
+        for x, ion_subject in enumerate(self.ions_lst):
             ion_subject.simulate_ion()  # simulate for 1 cycle
             cycle_v.append(ion_subject.velocity)
+            self.frames[self.cycles_count][x] = ion_subject.absolute_final_loc  # collect for video
 
         return np.average(np.array(cycle_v))
 
@@ -257,8 +259,12 @@ def execution():
     ion_selection_dict = ion_selection_panel()
     potential_profile = extract_data_from_interface()
 
+    enable_video = extract_enable_video()
+
     plot_id = create_unique_id()
     plt.figure(plot_id)
+
+    video_3d_mat = []
 
     '''Simulating for every ion specified'''
     for key, value in ion_selection_dict.items():
@@ -267,6 +273,10 @@ def execution():
         print('Simulating '+ion_selection[0]+'; D='+str(ion_selection[1])+'[cm^2/sec]')
         r = Rims(ion_selection, potential_profile, False)
         r.run_rims()
+
+        '''Video'''
+        if enable_video:
+            video_3d_mat.append(r.frames)
 
         '''Adding distribution data for the complete histogram'''
         x = r.x_results
@@ -293,6 +303,10 @@ def execution():
     plt.savefig(folder+r'/'+file_name)
     plt.close(plot_id)
     print('Histogram of all ions simulated saved in '+folder+' as '+file_name+'.jpeg')
+
+    '''Video'''
+    if enable_video:
+        create_video_of_histograms(video_3d_mat, ion_selection_dict)
 
     rerun = execution_rerun_panel()
     if rerun:
@@ -484,5 +498,4 @@ if __name__ == '__main__':
     headline_panel()
     # debug_execution()
     execution()
-
     # create_i_of_dc_comparison([900000], True)

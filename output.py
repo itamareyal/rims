@@ -29,6 +29,14 @@ def create_video_of_histograms(frame_mat, ion_dict):
     frame_folder = r'Video outputs'
     if not os.path.exists(frame_folder):
         os.makedirs(frame_folder)
+
+    '''Clearing out any old frames'''
+    os.chdir(frame_folder)
+    for file in os.listdir('.'):
+        if file.startswith("cycle"):
+            os.remove(file)
+    os.chdir('..')
+
     for cycle in range(MAX_CYCLES):
         plt.figure(cycle)
         max_x = np.max(frame_mat) * pow(10, 4)

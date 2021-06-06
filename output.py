@@ -22,6 +22,7 @@ from defines import *
                             IMPLEMENTATION
 ----------------------------------------------------------------------'''
 
+'''----------------VIDEO----------------'''
 def create_video_of_histograms(frame_mat, ion_dict):
     print('\n-------------------------------------------------------\n')
     print('Generating video...')
@@ -119,6 +120,7 @@ def sort_by_title(x):
     return int(num)
 
 
+'''----------------LOG & TRACE----------------'''
 def create_trace_file(rims_object):
     if not os.path.exists(rims_object.path_for_output):
         os.makedirs(rims_object.path_for_output)
@@ -126,29 +128,12 @@ def create_trace_file(rims_object):
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(['X0[cm]', 'X' + str(POINTS) + '[cm]'])
 
-
-def create_test_csv(rims_object):
-    if not os.path.exists(rims_object.path_for_output):
-        os.makedirs(rims_object.path_for_output)
-    with open(rims_object.path_for_output + 'test_profiles.csv', newline='', mode='a') as csv_file:
-        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-
-        t = [0.8, 0.001, 0.002, 0.004]
-        writer.writerow(t)
-        writer.writerow(rims_object.potential_profile)
-        writer.writerow(-v for v in rims_object.electric_field)
-        writer.writerow(v+1 for v in rims_object.electric_field)
-    csv_file.close()
-    print("test csv printed")
-
-
 def write_to_trace_file(rims_object, ion_subject):
     if not os.path.exists(rims_object.path_for_output):
         os.makedirs(rims_object.path_for_output)
     with open(rims_object.path_for_output + 'simulation trace.csv', newline='', mode='a') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow([ion_subject.x0, ion_subject.L * ion_subject.arena_count + ion_subject.loc])
-
 
 def create_log_file(rims_object):
     if not os.path.exists(rims_object.path_for_output):
@@ -186,6 +171,8 @@ def print_log_file(rims_object):
         print(log)
     f.close()
 
+
+'''----------------PLOTS----------------'''
 def plot_potential_profile(rims_object):
     """
     plots and saves E,V profiles as function of x over 1 cycle
@@ -265,32 +252,7 @@ def plot_distribution_over_x_histogram(rims_object, x_plot_list):
     save_plots(rims_object, 'Distribution x axis histogram periodic', plot_id)
     return
 
-
-def save_plots(rims_object, name, fig_number):
-    if not os.path.exists(rims_object.path_for_output):
-        os.makedirs(rims_object.path_for_output)
-    plt.figure(fig_number)
-    plt.savefig(rims_object.path_for_output + name + '.jpeg')
-    plt.close(fig_number)
-    print('\n' + name + ' saved to output plots.')
-    return
-
-
-def create_unique_id():
-    now = datetime.now()
-    uid = str(now.strftime("%x")).replace('/', '-')+'_' \
-        + str(now.strftime("%X")).replace(':', '')
-    return uid
-
-
-def percentage_progress(n, N):
-    progress = int(n * 100) / int(N)
-    sys.stdout.write("\r%d%%" % progress)
-    sys.stdout.flush()
-
-
-def heatmap(data, row_labels, col_labels, ax=None,
-            cbar_kw={}, cbarlabel="", **kwargs):
+def heatmap(data, row_labels, col_labels, ax=None, cbar_kw={}, cbarlabel="", **kwargs):
     """
     Create a heatmap from a numpy array and two lists of labels.
 
@@ -347,3 +309,41 @@ def heatmap(data, row_labels, col_labels, ax=None,
     ax.tick_params(which="minor", bottom=False, left=False)
 
     return im, cbar
+
+def save_plots(rims_object, name, fig_number):
+    if not os.path.exists(rims_object.path_for_output):
+        os.makedirs(rims_object.path_for_output)
+    plt.figure(fig_number)
+    plt.savefig(rims_object.path_for_output + name + '.jpeg')
+    plt.close(fig_number)
+    print('\n' + name + ' saved to output plots.')
+    return
+
+
+'''----------------HELP FUNCTIONS----------------'''
+def create_unique_id():
+    now = datetime.now()
+    uid = str(now.strftime("%x")).replace('/', '-')+'_' \
+        + str(now.strftime("%X")).replace(':', '')
+    return uid
+
+def percentage_progress(n, N):
+    progress = int(n * 100) / int(N)
+    sys.stdout.write("\r%d%%" % progress)
+    sys.stdout.flush()
+
+def create_test_csv(rims_object):
+    if not os.path.exists(rims_object.path_for_output):
+        os.makedirs(rims_object.path_for_output)
+    with open(rims_object.path_for_output + 'test_profiles.csv', newline='', mode='a') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+        t = [0.8, 0.001, 0.002, 0.004]
+        writer.writerow(t)
+        writer.writerow(rims_object.potential_profile)
+        writer.writerow(-v for v in rims_object.electric_field)
+        writer.writerow(v + 1 for v in rims_object.electric_field)
+    csv_file.close()
+    print("test csv printed")
+
+

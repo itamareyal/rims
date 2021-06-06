@@ -1,14 +1,12 @@
 """"
 rims.py
 
-Simulator of the movement of ions in a ratchet based system
+---TOP MODULE---
 
-The program will simulate the movement of many ions with different initial conditions (IE) through the ratchet.
-The IEs will be randomized, thus making the simulator Monte Carlo based.
-Simulation will generate graphs plotting the location of the ions post simulation.  
-The simulator works on every individual ion separately.
-The ions location will be processed at time frames at a given rate.
-Every such time frame is an iteration of the main loop, in which the location on the ion will be calculated and graphed.
+Simulator of the movement of ions in a ratchet based system
+for further information regerding this project, refer to README file.
+
+This script host thr Rims class, defining simulation parameters. In addition it holds horizontal execution functions.
 
 Eran Weil
 Itamar Eyal
@@ -24,7 +22,6 @@ Tel-Aviv university
 
 from ion_simulation import *
 from current_calc import *
-from video_gen import *
 from output import *
 from defines import *
 from interface import *

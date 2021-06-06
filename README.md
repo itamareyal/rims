@@ -49,7 +49,6 @@ vk0 | vk1 | vk2 | ... | vkn
 * _current_calc.py_		Calculation of particle speed and current
 * _outputs.py_		    Plotting, tracing and logging all outputs
 * _Defines.py_		    Hard coded data of physical and simulation constants
-* _Video_gen.py_		Generation of a video of histogram changing over time
 * _Setup.py_	    	Enclosing the project into an executable file
 
 
@@ -59,6 +58,7 @@ vk0 | vk1 | vk2 | ... | vkn
 * _opencv_
 * _os_
 * _csv_
+
 
 ## Credits
 #### Dr. Gideon Segev

@@ -57,8 +57,9 @@ d_pos = d_a1 * np.sin(2 * np.pi * d_x / d_L) + d_a2 * np.sin(4 * np.pi * d_x / d
 d_neg = np.multiply(d_pos, d_alpha)
 d_potential_mat = np.vstack((d_pos, d_neg))
 d_t_vec = np.array([d_dc * d_T, d_T])
+
+'''0=Pb+2, 1=K+, 2=Ca+2, 3=Na+, 4=e-'''
 debug_dict = {
-    '''0=Pb+2, 1=K+, 2=Ca+2, 3=Na+, 4=e-'''
     "ion_selection"         : (ION_LIST[4], diffusion_coefficient_dict[ION_LIST[4]]),
     "ratchet_number"        : 2,
     "L"                     : d_L,

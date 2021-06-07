@@ -3,7 +3,7 @@
 #### This project refers to the usage of electric ratchets as a mean of pumping ions selectively. Ratchets are essentially potential profiles that change in space and time at a specific frequency. By exploiting the electric charge of ions, said ratchet can induce ion movement inside a compound. Relaying on different diffusion coefficients of different ions, the ion movement created by the ratchet, can be of opposite direction for different ions. Thus, selectively pumping out only one type of ion. Motivation and possible applications of the idea are detailed in the motivation section.
 #### The potential profiles defining the ratchet can vary, changing in amplitude, shape and their time period. In order to predict the effect of different profiles, we created a simulation environment that tests the effect of ratchets on ions. The goal of our project was to build a simulator that calculates the movement of multiple ions under any potential profile inserted to the system. Calculation is ‘Monte Carlo’ based, meaning the initial location of the simulated ion is random.   
 #### The product is RIMS (Ratchet based Ions Movement Simulator), a console-based application capable of receiving any potential profile, any physical diffusion coefficient and plotting various graphs of ion movement.
-
+#### Patent number: US20200402782A1
 ## Usage
 
 #### Executing the main script 'rims.py' launches the console interface. Creating the simulation is done in 2 steps:

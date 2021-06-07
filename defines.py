@@ -10,11 +10,28 @@ All units in cm / sec / Hz / kelvin / ev
 ----------------------------------------------------------------------'''
 
 import numpy as np
+import csv
 
 
 '''----------------------------------------------------------------------
                                 DEFINES
 ----------------------------------------------------------------------'''
+
+def load_settings(settings_file):
+    settings_dict = {}
+    with open(settings_file, 'r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            settings_dict[row[0]] = row[1]
+    return settings_dict
+
+def detect_bool_from_str(string):
+    if string.lower() in ['true', 'y', 'yes', 't']:
+        return True
+    return False
+
+
+settings = load_settings('settings.csv')
 
 '''PARTICLE PARAMETERS'''
 ION_LIST = ["Lead Pb+2", "Potassium K+", "Calcium Ca+2", "Sodium Na+", "Electrons in Silicon"]
@@ -61,19 +78,19 @@ TEMPERATURE = 293
 
 
 '''SIMULATION PARAMETERS'''
-ENABLE_VIDEO = True
+ENABLE_VIDEO = detect_bool_from_str(settings['ENABLE_VIDEO'])
 ALPHA = -1
 BLANK_INT = 'blank'
-NUMBER_OF_SIMULATIONS = 3000
-STEADY_STATE_PERCENT_MARGIN = 0.05
+NUMBER_OF_SIMULATIONS = int(settings['NUMBER_OF_SIMULATIONS'])
+STEADY_STATE_PERCENT_MARGIN = float(settings['STEADY_STATE_PERCENT_MARGIN'])
 IONS_PER_THREAD = 100
 NUMBER_OF_THREADS = int(NUMBER_OF_SIMULATIONS/IONS_PER_THREAD)
-MAX_CYCLES = 20
+MAX_CYCLES = int(settings['MAX_CYCLES'])
 SIGMA = (500 * pow(10, -4)) * (50 * pow(10, -7))
 INTERVALS_FLASH_RATIO = 10
 INTERVALS_FLASH_RATIO_ELECTRONS = 50
-RESOLUTION = 1000
-RATCHETS_IN_SYSTEM = 4
+RESOLUTION = int(settings['RESOLUTION'])
+RATCHETS_IN_SYSTEM = int(settings['RATCHETS_IN_SYSTEM'])
 POINTS = 1000
 MIN_NUM_SPEEDS_FOR_AVG = 10
 YELLOW = '#c49000'

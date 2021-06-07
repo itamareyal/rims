@@ -134,7 +134,8 @@ class Rims:
         for x, ion_subject in enumerate(self.ions_lst):
             ion_subject.simulate_ion()  # simulate for 1 cycle
             cycle_v.append(ion_subject.velocity)
-            self.frames[self.cycles_count][x] = ion_subject.absolute_final_loc  # collect for video
+            if ENABLE_VIDEO:
+                self.frames[self.cycles_count][x] = ion_subject.absolute_final_loc  # collect for video
 
         return np.average(np.array(cycle_v))
 
@@ -164,7 +165,7 @@ class Rims:
                 print('Steady state reached after '+str(self.css)+' ratchet cycles')
             else:
                 print('Steady state NOT reached after '+str(self.cycles_count)+' ratchet cycles')
-                print('Maximal number of cycles can be edited in defines.py module')
+                print('Maximal number of cycles can be edited in settings.csv')
 
         '''Collecting final locations for histogram'''
         for ion_subject in self.ions_lst:
@@ -256,7 +257,7 @@ def execution():
     ion_selection_dict = ion_selection_panel()
     potential_profile = extract_data_from_interface()
 
-    enable_video = extract_enable_video()
+    # enable_video = extract_enable_video()
 
     plot_id = create_unique_id()
     plt.figure(plot_id)
@@ -272,7 +273,7 @@ def execution():
         r.run_rims()
 
         '''Video'''
-        if enable_video:
+        if ENABLE_VIDEO:
             video_3d_mat.append(r.frames)
 
         '''Adding distribution data for the complete histogram'''
@@ -302,7 +303,7 @@ def execution():
     print('Histogram of all ions simulated saved in '+folder+' as '+file_name+'.jpeg')
 
     '''Video'''
-    if enable_video:
+    if ENABLE_VIDEO:
         create_video_of_histograms(video_3d_mat, ion_selection_dict)
 
     rerun = execution_rerun_panel()

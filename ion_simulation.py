@@ -1,17 +1,10 @@
+from defines import *
+from current_calc import *
 '''
 ion_simulation.py
 
 Calculates the location of an ion for every time interval.
 '''
-
-
-'''----------------------------------------------------------------------
-                                IMPORTS
-----------------------------------------------------------------------'''
-
-import random
-from defines import *
-from current_calc import *
 
 '''----------------------------------------------------------------------
                             IMPLEMENTATIONS
@@ -33,10 +26,9 @@ class ion:
 
         '''simulation attributes'''
         self.ion = rims.ion
-        self.loc = random.uniform(0, self.L)
+        self.loc = np.random.uniform(0, self.L)
         self.x0 = self.loc
         self.intervals_count = 0
-        self.points = POINTS
         self.arena_count = 0
         self.path = rims.path_for_output
 
@@ -98,7 +90,3 @@ class ion:
         self.absolute_final_loc = self.L * self.arena_count + self.loc
         self.velocity = (self.absolute_final_loc - relative_x0) * self.flash_frequency
         return
-
-
-
-

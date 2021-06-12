@@ -1,17 +1,12 @@
+from defines import *
+from rims import *
+import csv
+import os
 """
 interface.py
 
 Extraction of data from user and external files
 """
-
-'''----------------------------------------------------------------------
-                                IMPORTS
-----------------------------------------------------------------------'''
-
-from defines import *
-import csv
-import os
-
 
 '''----------------------------------------------------------------------
                             IMPLEMENTATION
@@ -30,8 +25,15 @@ def execution_rerun_panel():
     print("-------------------------------------------------------")
     rerun = input("\nPress y and ENTER to run an new simulation, otherwise press ENTER...\n")
     if rerun == 'y':
-        return True
+          return True
     return False
+
+def exit_panel():
+    print("\n-------------------------------------------------------")
+    print("                 Exiting RIMS")
+    print("-------------------------------------------------------")
+    input("\npress ENTER to exit...\n")
+    exit()
 
 def extract_enable_video():
     print("Add video output?\n1)Yes\n2)No")
@@ -154,52 +156,57 @@ def ion_selection_panel():
 
     print("\nSelect an ion to be simulated from the following list:")
     print("\t0) Manually insert diffusion coefficient")
-    print("\t1) Lead Pb+2")
-    print("\t2) Potassium K+")
-    print("\t3) Calcium Ca+2")
-    print("\t4) Sodium Na+")
-    print("\t5) Electrons in Silicon")
+    for i, ion_tup in enumerate(diffusion_coefficient_dict.items(), 1):
+        print('\t'+str(i) + ') ' + ion_tup[0])
     print("\nFor multiple ions, type comma between inputs")
 
     input_valid = False
-
     ions_for_simulation_dict = {}
     while not input_valid:
         manual_counter = 1
-
         user_input = input("Enter your selection:")
+
+        '''Parse arguments'''
         if ',' in user_input:
             user_input_split = user_input.split(',')
         else:
             user_input_split = [user_input]
+
         for arg in user_input_split:
             arg = arg.strip(' ')
-            if arg in ['1', '2', '3', '4', '5']:
-                ion = ION_LIST[int(arg)-1]
-                diff = diffusion_coefficient_dict[ion]
-                ions_for_simulation_dict[ion] = diff
-
-            elif arg == '0':  # manual entry
-                diff = input_check_float("Enter diffusion coefficient [cm^2/sec]:")
-                ion = 'manual_input'+str(manual_counter)
-                ions_for_simulation_dict[ion] = diff
-                manual_counter += 1
-
-            else:
-                print('object '+str(arg)+' not comprehensible, re-enter arguments')
-                ions_for_simulation_dict.clear()
+            try:
+                int_arg = int(arg)
+                num_options = len(diffusion_coefficient_dict.items())
+                if int_arg > num_options:
+                    print(str(int_arg)+' is out of range. There are only '+str(num_options)+' options.')
+                    print(arg + ' not included.')
+                    continue
+            except ValueError:
+                print('Please enter numbers separated by commas only.')
+                print('object '+str(arg)+' not comprehensible and not included')
                 continue
-        input_valid = True
 
-    print('\nDiff coefficient to be simulated:')
+            if arg == '0':  # manual entry
+                diff = input_check_float("Enter diffusion coefficient [cm^2/sec]:")
+                ion_arg = 'manual_input'+str(manual_counter)
+                ions_for_simulation_dict[ion_arg] = diff
+                manual_counter += 1
+            else:
+                ion_arg, diff = list(diffusion_coefficient_dict.items())[int(arg)-1]
+                ions_for_simulation_dict[ion_arg] = diff
 
+        if len(list(ions_for_simulation_dict.items())) > 0:
+            input_valid = True
+
+    '''Print ions to be simulated'''
+    print('\nIons and diffusion coefficients to be simulated:')
     for key, value in ions_for_simulation_dict.items():
-        print(key, ' : ', value,'[cm^2,sec]')
+        print(key, ' : ', value, '[cm^2,sec]')
     return ions_for_simulation_dict
 
 
 def input_check_int(msg, desired_range):
-    val = BLANK_INT
+    val = 'blank'
     while val not in desired_range:
         try:
             val = int(input(msg))
@@ -210,7 +217,7 @@ def input_check_int(msg, desired_range):
 
 
 def input_check_float(msg):
-    val = BLANK_INT
+    val = 'blank'
     clear = False
     while not clear:
         try:
@@ -244,11 +251,10 @@ def select_csv_file():
         print("\nNo .csv or .txt files found in "+folder)
         print("Please refer to README for more details on the csv ratchet parameter file")
         print("Save a csv parameter file to "+folder+" and relaunch RIMS")
-        input("press ENTER to exit RIMS...")
-        exit()
-    else:
-        print("Select the number of the profile you wish load:")
-        file = valid_files[input_check_int("file number: ", range(1, len(valid_files)+1))-1]
+        exit_panel()
+
+    print("Select the number of the profile you wish load:")
+    file = valid_files[input_check_int("file number: ", range(1, len(valid_files)+1))-1]
     scalar_x, vec_t, mat_v = load_data_from_csv(folder + file)
     return scalar_x, vec_t, mat_v
 
@@ -265,7 +271,7 @@ def load_data_from_csv(csv_file_path):
     mat_v = np.loadtxt(csv_file_path, skiprows=1, delimiter=',')        # potential profiles
     '''In case only one profile was detected in the file'''
     if mat_v.ndim == 1:
-        print("only 1 profile was detected. adding a second profile such that V2= -ALPHA*V1")
+        print("only 1 profile was detected. adding a second profile such that V2= -"+str(ALPHA)+"*V1")
         mat_v = np.vstack((mat_v, ALPHA * mat_v))
 
     return scalar_x, vec_t, mat_v

@@ -1,16 +1,11 @@
+import sys
+from cx_Freeze import setup, Executable
+
 """
 setup.py
 
 Arrange simulator into a single .exe file
 """
-
-'''----------------------------------------------------------------------
-                                IMPORTS
-----------------------------------------------------------------------'''
-
-import sys
-from cx_Freeze import setup, Executable
-
 
 '''----------------------------------------------------------------------
                                 SETTINGS

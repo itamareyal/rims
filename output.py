@@ -1,13 +1,3 @@
-"""
-output.py
-
-Creates and writes data to log, trace and plot
-"""
-
-'''----------------------------------------------------------------------
-                                IMPORTS
-----------------------------------------------------------------------'''
-
 import matplotlib.pyplot as plt
 from datetime import datetime
 import os
@@ -16,7 +6,11 @@ import sys
 import cv2
 from PIL import Image
 from defines import *
+"""
+output.py
 
+Creates and writes data to log, trace and plot
+"""
 
 '''----------------------------------------------------------------------
                             IMPLEMENTATION
@@ -24,6 +18,11 @@ from defines import *
 
 '''----------------VIDEO----------------'''
 def create_video_of_histograms(frame_mat, ion_dict):
+    """
+    Top vodeo function. creates a video out of frames mat
+    :param frame_mat: histograms of distribution by cycled. x axis is distribution, y is cycles
+    :param ion_dict: ions in simulation
+    """
     print('\n-------------------------------------------------------\n')
     print('Generating video...')
     frame_folder = r'Video outputs'
@@ -37,12 +36,14 @@ def create_video_of_histograms(frame_mat, ion_dict):
             os.remove(file)
     os.chdir('..')
 
+    '''Creating histogram for each cycle'''
     for cycle in range(MAX_CYCLES):
         plt.figure(cycle)
         max_x = np.max(frame_mat) * pow(10, 4)
         min_x = np.min(frame_mat) * pow(10, 4)
         plt.ylim(0, 0.025)
         plt.xlim(min_x, max_x)
+        '''Adding all ions to the cycle histogram'''
         for i_ion, ion in enumerate(ion_dict.items()):
             percentage_progress(cycle * len(ion_dict.items()) + i_ion,
                                 MAX_CYCLES * len(ion_dict.items()))
@@ -50,14 +51,14 @@ def create_video_of_histograms(frame_mat, ion_dict):
             x_results_um = [dx * pow(10, 4) for dx in x_results]
             weights = np.ones_like(x_results_um) / float(len(x_results_um))
             plt.hist(x_results_um, weights=weights, bins=RESOLUTION, label=str(ion[0]))
+        '''Plot attributes and labels'''
         plt.ylabel('Density')
         plt.xlabel(r'X [$\mu $m]')
         plt.title(r"RIMS: Video of distribution x axis: $\rho $(x,t)", fontsize=12, fontweight='bold')
         plt.suptitle('ratchet cycle = ' + str(cycle), fontsize=10)
-
-        file_name = 'cycle_' + str(cycle)
-
         plt.legend(loc='upper left')
+        '''Documenting histogram'''
+        file_name = 'cycle_' + str(cycle)
         plt.savefig(frame_folder + '/' + file_name + '.jpeg')
         plt.close(cycle)
     video_name = str(create_unique_id()) + ' Distribution video.avi'
@@ -67,7 +68,7 @@ def create_video_of_histograms(frame_mat, ion_dict):
 
 def generate_video_from_frames(path_to_frames, title):
     """
-    Resize imgs to fit video. calls the video generation function.
+    Resize images to fit video. calls the video generation function.
     :param path_to_frames: folder containing all histogram figures
     :param title: name of video file to be generated
     """
@@ -75,7 +76,7 @@ def generate_video_from_frames(path_to_frames, title):
     mean_height = 0
     mean_width = 0
     num_of_images = len(os.listdir('.'))
-
+    '''Loading all frames'''
     for file in os.listdir('.'):
         if file.endswith(".jpg") or file.endswith(".jpeg") or file.endswith("png") or file.endswith("JPEG"):
             im = Image.open(file)
@@ -89,13 +90,15 @@ def generate_video_from_frames(path_to_frames, title):
     for file in os.listdir('.'):
         if file.endswith(".jpg") or file.endswith(".jpeg") or file.endswith("png") or file.endswith("JPEG"):
             im = Image.open(file)
-            # resizing
             imResize = im.resize((mean_width, mean_height), Image.ANTIALIAS)
             imResize.save(file, 'JPEG', quality=95)
     release_video(title)
     os.chdir('..')
 
 def release_video(title):
+    """
+    Adding resized frames to video
+    """
     image_folder = '.'
     video_name = title
 
@@ -108,17 +111,11 @@ def release_video(title):
 
     images = sorted(images, key=sort_by_title)
     frame = cv2.imread(os.path.join(image_folder, images[0]))
-
-    # setting the frame width, height width
     height, width, layers = frame.shape
-
     video = cv2.VideoWriter(video_name, 0, 1, (width, height))
 
-    # Appending the images to the video one by one
     for image in images:
         video.write(cv2.imread(os.path.join(image_folder, image)))
-
-    # De-allocating memories taken for window creation
     cv2.destroyAllWindows()
     video.release()  # releasing the video generated
 
@@ -134,7 +131,7 @@ def create_trace_file(rims_object):
         os.makedirs(rims_object.path_for_output)
     with open(rims_object.path_for_output + 'simulation trace.csv', newline='', mode='a') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(['X0[cm]', 'X' + str(POINTS) + '[cm]'])
+        writer.writerow(['X0[cm]', 'X' + str(rims_object.cycles_count * rims_object.intervals_in_period) + '[cm]'])
 
 def write_to_trace_file(rims_object, ion_subject):
     if not os.path.exists(rims_object.path_for_output):
@@ -353,5 +350,3 @@ def create_test_csv(rims_object):
         writer.writerow(v + 1 for v in rims_object.electric_field)
     csv_file.close()
     print("test csv printed")
-
-

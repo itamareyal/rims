@@ -1,12 +1,13 @@
-# RIMS
+# RIMS [Ratchet based Ion Movement Simulator]
 ## Overview
-#### This project refers to the usage of electric ratchets as a mean of pumping ions selectively. Ratchets are essentially potential profiles that change in space and time at a specific frequency. By exploiting the electric charge of ions, said ratchet can induce ion movement inside a compound. Relaying on different diffusion coefficients of different ions, the ion movement created by the ratchet, can be of opposite direction for different ions. Thus, selectively pumping out only one type of ion. Motivation and possible applications of the idea are detailed in the motivation section.
+#### __Second prize winner of Tel-Aviv university EE projects contest of 2021__
+#### This project refers to the usage of electric ratchets as a mean of pumping ions selectively. Ratchets are essentially potential profiles that change in space and time at a specific frequency. By exploiting the electric charge of ions, said ratchet can induce ion movement inside a compound. Relaying on different diffusion coefficients of different ions, the ion movement created by the ratchet, can be of opposite direction for different ions. Thus, selectively pumping out only one type of ion.
 #### The potential profiles defining the ratchet can vary, changing in amplitude, shape and their time period. In order to predict the effect of different profiles, we created a simulation environment that tests the effect of ratchets on ions. The goal of our project was to build a simulator that calculates the movement of multiple ions under any potential profile inserted to the system. Calculation is ‘Monte Carlo’ based, meaning the initial location of the simulated ion is random.   
 #### The product is RIMS (Ratchet based Ions Movement Simulator), a console-based application capable of receiving any potential profile, any physical diffusion coefficient and plotting various graphs of ion movement.
 #### Patent number: US20200402782A1
 ## Usage
 
-#### Executing the main script 'rims.py' launches the console interface. Creating the simulation is done in 2 steps:
+#### Executing the main script 'rims.exe' launches the console interface. Creating the simulation is done in 2 steps:
 
 ------------------------------------------------------------------------------------------------------
                                 Step 1- Configure the system
@@ -41,6 +42,12 @@ vk0 | vk1 | vk2 | ... | vkn
 
 #### **NOTE: all potential profiles must be of the same length and same number of points. meaning that every row has exactly n+1 points. n,k > 0**
 
+## Settings
+#### Some simulation parameters can be edited in settings.csv file. open in notepad, edit, save and re-launch rims to update the settings
+#### More ions & their diffusion coefficients can be permanently added to the step1 via diffusion_coefficients.csv
+
+## Compiled version
+#### [Link for pre-compiled versions](https://drive.google.com/drive/folders/1z9EpGJJgFvfM1rzAkMjoKMdQWmRHlILU?usp=sharing)
 
 ## Structure
 * _rims.py_		    	Top module, hosting class ‘rims’
@@ -64,4 +71,4 @@ vk0 | vk1 | vk2 | ... | vkn
 #### Dr. Gideon Segev
 #### Eran Weil
 #### Itamar Eyal
-###### Electrical devices lab, Tel-Aviv university
+###### Energy devices lab, Tel-Aviv university

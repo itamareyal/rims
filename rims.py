@@ -10,15 +10,15 @@ rims.py
 ---TOP MODULE---
 
 Simulator of the movement of ions in a ratchet based system
-for further information regerding this project, refer to README file.
+for further information regarding this project, refer to README file.
 
-This script host thr Rims class, defining simulation parameters. In addition it holds horizontal execution functions.
+This script hosts the Rims class and defining simulation parameters. 
+In addition, it holds horizontal execution functions.
 
 Eran Weil
 Itamar Eyal
-
 Dr. Gideon Segev
-Tel-Aviv university
+Energy devices lab, Tel-Aviv university
 """
 
 '''----------------------------------------------------------------------
@@ -51,7 +51,7 @@ class Rims:
         self.cycles_count = 0
 
         '''simulation attributes'''
-        self.number_of_simulations = NUMBER_OF_SIMULATIONS
+        self.PARTICLES_SIMULATED = PARTICLES_SIMULATED
         self.start_time = datetime.now()
         self.path_for_output = r'RIMS output plots/' + get_time_stamp(self.start_time) + ' ' + self.ion + r'/'
         self.fast_mode = fast_mode
@@ -60,11 +60,11 @@ class Rims:
             else self.potential_profile_mat.shape[1]
         # self.ions_mat = self.generate_ions_mat()
         self.electric_field_mat = self.get_electric_field()
-        self.ions_lst = [Rims.create_ion(self) for i in range(NUMBER_OF_SIMULATIONS)]
+        self.ions_lst = [Rims.create_ion(self) for i in range(PARTICLES_SIMULATED)]
 
         '''result attributes'''
         self.x_results = []
-        self.frames = np.zeros(shape=(MAX_CYCLES+1, NUMBER_OF_SIMULATIONS+1))
+        self.frames = np.zeros(shape=(MAX_CYCLES+1, PARTICLES_SIMULATED+1))
         self.velocity = 0
         self.current = 0
         self.css = 0

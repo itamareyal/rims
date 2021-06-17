@@ -15,6 +15,7 @@ Extraction of data from user and external files
 def headline_panel():
     print("-------------------------------------------------------")
     print("     RIMS - Ratchet based Ion Movement Simulator")
+    print("     version " + VERSION)
     print("-------------------------------------------------------")
     print("For instructions, please refer to the README file\n")
     return

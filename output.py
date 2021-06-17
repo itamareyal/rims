@@ -162,9 +162,9 @@ def create_log_file(rims_object):
             f.write("\tduty cycle: " + str(rims_object.time_vec[0] * rims_object.flash_frequency) + "\n")
 
         f.write("\nSimulation settings\n")
-        f.write("\tnumber of particles simulated: " + str(rims_object.number_of_simulations) + "\n")
+        f.write("\tnumber of particles simulated: " + str(rims_object.PARTICLES_SIMULATED) + "\n")
         f.write("\tmeasurements per particle: " + str(rims_object.cycles_count * rims_object.intervals_in_period) + "\n")
-        f.write("\tintervals (delta_t): " + str(rims_object.interval) + "[sec]\n")
+        f.write("\ttime measurement intervals (delta_t): " + str(rims_object.interval) + "[sec]\n")
         f.write("\tfriction coefficient (gamma): " + str(rims_object.gamma) + "[eVsec/cm^2]\n")
         f.write("\tresolution: " + str(rims_object.resolution) + " (no. of dx along a single ratchet)\n")
         f.write("\tvelocity: " + str(rims_object.velocity) + "[cm/sec]\n")

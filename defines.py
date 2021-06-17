@@ -42,6 +42,9 @@ diffusion_coefficient_dict = load_settings('diffusion_coefficients.csv')
                                 DEFINES
 ----------------------------------------------------------------------'''
 
+'''VERSION'''
+VERSION = '1.9.1'
+
 '''DEBUG PARAMETERS'''
 d_alpha = -1
 d_dc = 0.8
@@ -71,10 +74,10 @@ TEMPERATURE = 293
 '''SIMULATION PARAMETERS'''
 ENABLE_VIDEO = detect_bool_from_str(settings['ENABLE_VIDEO'])
 ALPHA = -1
-NUMBER_OF_SIMULATIONS = int(settings['NUMBER_OF_SIMULATIONS'])
+PARTICLES_SIMULATED = int(settings['PARTICLES_SIMULATED'])
 STEADY_STATE_PERCENT_MARGIN = float(settings['STEADY_STATE_PERCENT_MARGIN'])
 IONS_PER_THREAD = 100
-NUMBER_OF_THREADS = int(NUMBER_OF_SIMULATIONS/IONS_PER_THREAD)
+NUMBER_OF_THREADS = int(PARTICLES_SIMULATED/IONS_PER_THREAD)
 MAX_CYCLES = int(settings['MAX_CYCLES'])
 INTERVALS_FLASH_RATIO = 10
 INTERVALS_FLASH_RATIO_ELECTRONS = 50

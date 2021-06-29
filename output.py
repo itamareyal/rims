@@ -19,7 +19,7 @@ Creates and writes data to log, trace and plot
 '''----------------VIDEO----------------'''
 def create_video_of_histograms(frame_mat, ion_dict):
     """
-    Top vodeo function. creates a video out of frames mat
+    Top video function. creates a video out of frames mat
     :param frame_mat: histograms of distribution by cycled. x axis is distribution, y is cycles
     :param ion_dict: ions in simulation
     """
@@ -350,3 +350,6 @@ def create_test_csv(rims_object):
         writer.writerow(v + 1 for v in rims_object.electric_field)
     csv_file.close()
     print("test csv printed")
+
+def warning_to_console(msg):
+    print("\tWARNING: "+msg)

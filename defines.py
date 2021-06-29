@@ -43,7 +43,7 @@ diffusion_coefficient_dict = load_settings('diffusion_coefficients.csv')
 ----------------------------------------------------------------------'''
 
 '''VERSION'''
-VERSION = '1.9.1'
+VERSION = '1.9.2'
 
 '''DEBUG PARAMETERS'''
 d_alpha = -1
@@ -63,13 +63,11 @@ d_ion = 'Electrons in Silicon'
 d_diffusion = diffusion_coefficient_dict[d_ion]
 d_ion_selection = (d_ion, d_diffusion)
 
-
 '''PHYSICAL CONSTANTS'''
 ELECTRON_CHARGE = 1.6 * pow(10, -19)
 BOLTZMANN_CONSTANT = 8.617333262 * pow(10, -5)
 BOLTZMANN_CONSTANT_J = 1.380649 * pow(10, -23)
 TEMPERATURE = 293
-
 
 '''SIMULATION PARAMETERS'''
 ENABLE_VIDEO = detect_bool_from_str(settings['ENABLE_VIDEO'])

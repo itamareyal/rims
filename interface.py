@@ -26,7 +26,7 @@ def execution_rerun_panel():
     print("-------------------------------------------------------")
     rerun = input("\nPress y and ENTER to run an new simulation, otherwise press ENTER...\n")
     if rerun == 'y':
-          return True
+        return True
     return False
 
 def exit_panel():
@@ -45,7 +45,14 @@ def extract_enable_video():
 
 
 def extract_data_from_interface():
-
+    """
+    Extracts the ratchet parameters from the user as a list in form:
+    potential_profile = [L, x, t_vec, potential_mat]
+    L = ratchet length x axis
+    x = x axis vector
+    t_vec = timing vector. t_vec[last] = T
+    potential_mat = matrix of the potential profiles. rows-different profiles, cols-potential at location x
+    """
     print("-------------------------------------------------------")
     print("             Step 2- Configure the ratchet")
     print("-------------------------------------------------------")
@@ -126,7 +133,7 @@ def extract_data_from_interface():
         tries = 0
         while dc < 0 or dc > 1:
             if tries > 0:
-                print("\tDC takes float values from (0-1)")
+                warning_to_console('DC takes float values from (0-1)')
             try:
                 dc = float(input("DC = "))
             except ValueError:
@@ -151,6 +158,9 @@ def extract_data_from_interface():
     return potential_profile
 
 def ion_selection_panel():
+    """
+    Extracts ions & diffusion coefficient dictionary from the user
+    """
     print("-------------------------------------------------------")
     print("             Step 1- Configure the system")
     print("-------------------------------------------------------")
@@ -179,22 +189,33 @@ def ion_selection_panel():
                 int_arg = int(arg)
                 num_options = len(diffusion_coefficient_dict.items())
                 if int_arg > num_options:
-                    print(str(int_arg)+' is out of range. There are only '+str(num_options)+' options.')
+                    warning_to_console(str(int_arg)+' is out of range. There are only '+str(num_options)+' options.')
                     print(arg + ' not included.')
                     continue
             except ValueError:
-                print('Please enter numbers separated by commas only.')
-                print('object '+str(arg)+' not comprehensible and not included')
+                warning_to_console("Please enter numbers separated by commas only.")
+                print('\tobject '+str(arg)+' not comprehensible and not included')
                 continue
 
             if arg == '0':  # manual entry
-                diff = input_check_float("Enter diffusion coefficient [cm^2/sec]:")
+                clear = False
+                diff = 0
+                while not clear:
+                    try:
+                        diff = float(input("Enter diffusion coefficient [cm^2/sec]:"))
+                        if diff >= 0.0001:
+                            warning_to_console("Diffusion coefficient must be under 0.0001 [cm^2/sec]")
+                            continue
+                        clear = True
+                    except ValueError:
+                        warning_to_console("Please enter a float as specified above")
+                        continue
                 ion_arg = 'manual_input'+str(manual_counter)
-                ions_for_simulation_dict[ion_arg] = diff
                 manual_counter += 1
             else:
                 ion_arg, diff = list(diffusion_coefficient_dict.items())[int(arg)-1]
-                ions_for_simulation_dict[ion_arg] = diff
+
+            ions_for_simulation_dict[ion_arg] = diff
 
         if len(list(ions_for_simulation_dict.items())) > 0:
             input_valid = True
@@ -212,7 +233,7 @@ def input_check_int(msg, desired_range):
         try:
             val = int(input(msg))
         except ValueError:
-            print("\tPlease enter an integer as specified above")
+            warning_to_console("Please enter an integer as specified above")
             continue
     return val
 
@@ -225,7 +246,7 @@ def input_check_float(msg):
             val = float(input(msg))
             clear = True
         except ValueError:
-            print("\tPlease enter an integer or a float as specified above")
+            warning_to_console("Please enter an integer or a float as specified above")
             continue
     return val
 
@@ -249,7 +270,7 @@ def select_csv_file():
             print(str(i)+') ' + entry)
             valid_files.append(entry)
     if len(valid_files) == 0:
-        print("\nNo .csv or .txt files found in "+folder)
+        warning_to_console("No .csv or .txt files found in "+folder)
         print("Please refer to README for more details on the csv ratchet parameter file")
         print("Save a csv parameter file to "+folder+" and relaunch RIMS")
         exit_panel()

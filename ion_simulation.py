@@ -39,12 +39,18 @@ class ion:
         self.gamma = rims.gamma
 
     def electric_force(self, x):
+        """
+        Gives electric field at location x and time t (for the currently applied profile)
+        """
         index_in_array = int(x * self.electric_field_mat.shape[1] / self.L)
         mode = self.ratchet_mode()
         electric_field = self.electric_field_mat[mode][index_in_array]
         return electric_field / self.gamma
 
     def noise(self):
+        """
+        Brownian motor
+        """
         ksai = np.random.normal(0, 1)
         return np.multiply(ksai, np.sqrt(2 * self.diffusion * self.interval))
 
@@ -69,6 +75,7 @@ class ion:
         em = np.multiply(fe, self.interval)
         new_x = xt + em + noise
 
+        '''Keeping new_x in range (0, L) and counts the arenas(=ratchets) passed'''
         while new_x > self.L:
             new_x -= self.L
             self.arena_count += 1
@@ -79,7 +86,7 @@ class ion:
 
     def simulate_ion(self):
         """
-        simulate ion movement over number of iterations.
+        simulate ion movement over one ratchet cycle
         """
         self.intervals_count = 0
         relative_x0 = (self.arena_count * self.L) + self.loc
@@ -87,6 +94,7 @@ class ion:
             self.loc = self.get_new_x()
             self.intervals_count += 1
 
+        '''Calculates absolute location of the ion'''
         self.absolute_final_loc = self.L * self.arena_count + self.loc
         self.velocity = (self.absolute_final_loc - relative_x0) * self.flash_frequency
         return

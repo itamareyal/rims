@@ -80,7 +80,8 @@ class Rims:
         """
         Derives the electric field from the potential, E(x,t) saves it as attribute
         """
-        self.electric_field_mat = np.array([-np.gradient(v, self.L/self.resolution) for v in self.potential_profile_mat])
+        dx = self.L/self.resolution
+        self.electric_field_mat = np.array([-np.gradient(v, dx) for v in self.potential_profile_mat])
         '''plot E & V'''
         if not self.fast_mode:
             plot_potential_profile(self)
@@ -92,7 +93,9 @@ class Rims:
         """
         if self.ion == "Electrons in Silicon":
             return self.flash_period / INTERVALS_FLASH_RATIO_ELECTRONS
+        '''keeps delta t smaller than tau (diffusion time for L)'''
         critical_t = ((1 / INTERVALS_FLASH_RATIO) * self.L) ** 2 / (2 * self.diffusion)
+        '''Further diminishes delta t if its bigger that T/INTERVALS_FLASH_RATIO'''
         while critical_t > self.flash_period / INTERVALS_FLASH_RATIO:
             critical_t /= INTERVALS_FLASH_RATIO
         return critical_t
@@ -105,6 +108,7 @@ class Rims:
         Checks whether the system has reached ss
         """
         num_discrepancies_allowed = 1
+        '''Allow for ss only after MIN_MEASUREMENTS_FOR_SS cycles'''
         if len(vt_list) < MIN_MEASUREMENTS_FOR_SS:
             return
         margin = abs(vt_list[-1]) * STEADY_STATE_PERCENT_MARGIN
@@ -113,10 +117,12 @@ class Rims:
         for i in range(5):
             if (mean-margin) <= vt_list[i] <= (mean+margin):
                 continue
+            '''one discrepancy counted'''
             discrepancies += 1
 
         if discrepancies <= num_discrepancies_allowed:
             if not self.steady_state:
+                '''Saves the cycle when ss was first reached'''
                 self.css = self.cycles_count
             self.steady_state = True
         return
@@ -134,7 +140,8 @@ class Rims:
         """
         cycle_v = []
         for x, ion_subject in enumerate(self.ions_lst):
-            ion_subject.simulate_ion()  # simulate for 1 cycle
+            '''simulate all ions for 1 cycle'''
+            ion_subject.simulate_ion()
             cycle_v.append(ion_subject.velocity)
             if ENABLE_VIDEO:
                 self.frames[self.cycles_count][x] = ion_subject.absolute_final_loc  # collect for video
@@ -149,7 +156,7 @@ class Rims:
         if not self.fast_mode:
             print("\nRIMS simulation in progress...")
             create_trace_file(self)
-
+        '''Holds average velocity of all ions per cycle. rims_v[i]=av velocity at cycle i'''
         rims_v = []
 
         '''Main simulation loop'''
@@ -203,6 +210,9 @@ def thread_main(ions_lst, v_cycle):
     v_cycle.append(np.average(thread_v))
 
 def debug_execution():
+    """
+    Execution in pre-defined parameters for system check
+    """
     '''Debug mode: preselected parameters for simulator functional testing'''
     ion_selection = d_ion_selection
     potential_profile = d_potential_profile
@@ -214,12 +224,9 @@ def execution():
     """
     creating a new simulation environment and launching it
     """
-
     '''Extraction of data from interface'''
     ion_selection_dict = ion_selection_panel()
     potential_profile = extract_data_from_interface()
-
-    # enable_video = extract_enable_video()
 
     plot_id = create_unique_id()
     plt.figure(plot_id)
@@ -270,7 +277,6 @@ def execution():
 
     if execution_rerun_panel():
         execution()
-
 
 
 def create_i_of_dc_comparison(frequencies, compare):

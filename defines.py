@@ -43,7 +43,7 @@ diffusion_coefficient_dict = load_settings('diffusion_coefficients.csv')
 ----------------------------------------------------------------------'''
 
 '''VERSION'''
-VERSION = '1.9.2'
+VERSION = '1.9.3'
 
 '''DEBUG PARAMETERS'''
 d_alpha = -1
@@ -82,6 +82,8 @@ INTERVALS_FLASH_RATIO_ELECTRONS = 50
 RESOLUTION = int(settings['RESOLUTION'])
 RATCHETS_IN_SYSTEM = int(settings['RATCHETS_IN_SYSTEM'])
 MIN_MEASUREMENTS_FOR_SS = 10
+OVERWRITE_DELTA_T = detect_bool_from_str(settings['OVERWRITE_DELTA_T'])
+DELTA_T = int(settings['DELTA_T']) * pow(10, -6)
 
 '''KEDEM PROBLEM PARAMETERS'''
 NE = 1 * pow(10, 15)

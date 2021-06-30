@@ -35,12 +35,12 @@ vk0 | vk1 | vk2 | ... | vkn
 
 * x   = length of the potential profile [um]
 * ti  = absolute time when vi switches to vi+1 [usec]
-* tk  = time period of the whole ratchet marked T
+* tk  = time period of the whole ratchet marked T [usec]
 * k+1 = number of different potential profile
 * n+1 = number of dots describing each potential profile
 * vij = potential at point j of profile i [volt]
 
-#### **NOTE: all potential profiles must be of the same length and same number of points. meaning that every row has exactly n+1 points. n,k > 0**
+#### **NOTE: all potential profiles must be of the same length and same number of points. meaning that every row has exactly n+1 points. dx=x/(n+1) constant for all profiles. n,k > 0**
 
 ## Settings
 #### Some simulation parameters can be edited in settings.csv file. open in notepad, edit, save and re-launch rims to update the settings
@@ -55,8 +55,9 @@ vk0 | vk1 | vk2 | ... | vkn
 * _ion_simulation.py_	Host of ‘ion’ class, running ion iteration loop
 * _current_calc.py_		Calculation of particle speed and current
 * _outputs.py_		    Plotting, tracing and logging all outputs
-* _Defines.py_		    Hard coded data of physical and simulation constants
-* _Setup.py_	    	Enclosing the project into an executable file
+* _defines.py_		    Hard coded data of physical and simulation constants
+* _test.py_	    	    Test scripts for multiple simulation runs under different parameters
+* _setup.py_	    	Enclosing the project into an executable file
 
 
 ## Dependencies
@@ -68,7 +69,7 @@ vk0 | vk1 | vk2 | ... | vkn
 
 
 ## Credits
-#### Dr. Gideon Segev
 #### Eran Weil
 #### Itamar Eyal
+#### Dr. Gideon Segev
 ###### Energy devices lab, Tel-Aviv university

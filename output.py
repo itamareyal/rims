@@ -131,7 +131,8 @@ def create_trace_file(rims_object):
         os.makedirs(rims_object.path_for_output)
     with open(rims_object.path_for_output + 'simulation trace.csv', newline='', mode='a') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(['X0[cm]', 'X' + str(rims_object.cycles_count * rims_object.intervals_in_period) + '[cm]'])
+        writer.writerow(['X0[cm]', 'X' + str(MAX_CYCLES * rims_object.intervals_in_period) + '[cm]'])
+    write_to_log(rims_object, "trace file created")
 
 def write_to_trace_file(rims_object, ion_subject):
     if not os.path.exists(rims_object.path_for_output):
@@ -145,6 +146,19 @@ def create_log_file(rims_object):
         os.makedirs(rims_object.path_for_output)
     with open(rims_object.path_for_output + "RIMS simulation log.txt", "a") as f:
         f.write("RIMS simulation log\n\n")
+    return rims_object.path_for_output + "RIMS simulation log.txt"
+
+def write_to_log(rims_object, line):
+    file = rims_object.log
+    ts = str(datetime.now().strftime("%X")) + ' -\t'
+    with open(file, "a") as f:
+        f.write(ts + str(line) + '\n')
+
+def create_summary_file(rims_object):
+    if not os.path.exists(rims_object.path_for_output):
+        os.makedirs(rims_object.path_for_output)
+    with open(rims_object.path_for_output + "RIMS simulation summary.txt", "a") as f:
+        f.write("RIMS simulation summary\n\n")
         f.write("\ttime created: " + str(rims_object.start_time) + "\n")
         f.write("\ttest duration: " + str(datetime.now() - rims_object.start_time) + "\n")
         f.write("\tsimulated time: " + str(rims_object.cycles_count * rims_object.flash_period) + "[sec]\n")
@@ -168,12 +182,14 @@ def create_log_file(rims_object):
         f.write("\tfriction coefficient (gamma): " + str(rims_object.gamma) + "[eVsec/cm^2]\n")
         f.write("\tresolution: " + str(rims_object.resolution) + " (no. of dx along a single ratchet)\n")
         f.write("\tvelocity: " + str(rims_object.velocity) + "[cm/sec]\n")
+    write_to_log(rims_object, "summary file created")
     f.close()
 
-def print_log_file(rims_object):
-    with open(rims_object.path_for_output+"RIMS simulation log.txt", "r") as f:
+def print_summary_file(rims_object):
+    with open(rims_object.path_for_output+"RIMS simulation summary.txt", "r") as f:
         log = f.read()
         print(log)
+    write_to_log(rims_object, "summary file printed")
     f.close()
 
 
@@ -208,6 +224,7 @@ def plot_potential_profile(rims_object):
         fig.tight_layout()
     plt.savefig(rims_object.path_for_output + 'Ratchet potential profiles.jpeg')
     plt.close()
+    write_to_log(rims_object, "potential profile plot saved")
     return
 
 def plot_average_speed_of_ions(rims_object, v_plot_list):
@@ -219,6 +236,7 @@ def plot_average_speed_of_ions(rims_object, v_plot_list):
     plt.ylabel(r"Particle Velocity [cm/sec]")
     plt.suptitle("RIMS: Average speed of ions over ratchet cycles", fontsize=14, fontweight='bold')
     save_plots(rims_object, 'Average speed of ions over ratchet cycles',unique_id)
+    write_to_log(rims_object, "average speed plot saved")
     return
 
 def plot_distribution_over_x_histogram(rims_object, x_plot_list):
@@ -235,8 +253,9 @@ def plot_distribution_over_x_histogram(rims_object, x_plot_list):
     plt.ylabel('Density')
     plt.xlabel(r'X [$\mu $m]')
     plt.title(r"RIMS: Histogram of distribution in infinite system: $\rho $(x)", fontsize=14, fontweight='bold')
-    save_plots(rims_object, 'Distribution x axis histogram infinite', plot_id)
+    save_plots(rims_object, 'Distribution histogram infinite', plot_id)
     plt.close(plot_id)
+    write_to_log(rims_object, "Distribution histogram infinite saved")
 
     '''keeping final location in range [0, num of ratchets times arena size] to view steady state'''
     plot_id = create_unique_id()
@@ -254,7 +273,8 @@ def plot_distribution_over_x_histogram(rims_object, x_plot_list):
     plt.ylabel('Density')
     plt.xlabel(r'X [$\mu $m]')
     plt.title(r"RIMS: Histogram of distribution in periodic system: $\rho $(x)", fontsize=14, fontweight='bold')
-    save_plots(rims_object, 'Distribution x axis histogram periodic', plot_id)
+    save_plots(rims_object, 'Distribution histogram periodic', plot_id)
+    write_to_log(rims_object, "Distribution histogram periodic saved")
     return
 
 def heatmap(data, row_labels, col_labels, ax=None, cbar_kw={}, cbarlabel="", **kwargs):
@@ -321,7 +341,6 @@ def save_plots(rims_object, name, fig_number):
     plt.figure(fig_number)
     plt.savefig(rims_object.path_for_output + name + '.jpeg')
     plt.close(fig_number)
-    print('\n' + name + ' saved to output plots.')
     return
 
 

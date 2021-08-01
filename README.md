@@ -67,6 +67,17 @@ vk0 | vk1 | vk2 | ... | vkn
 * _os_
 * _csv_
 
+## Outputs
+#### Every simulation is presented by the following outputs. All saved to folder "RIMS output plots / [time stamp] [Ion] /"
+* _Distribution histogram periodic_
+* _Distribution histogram infinite_
+* _Ratchet potential profiles_
+* _RIMS simulation summary_
+* _RIMS simulation log_
+* _Average speed of ions over ratchet cycle_
+* _Simulation trace_
+#### Video outputs are saved in "Video outputs" folder
+#### Histograms of all ion types on the same plot are saved in "Multiple ions histograms" folder
 
 ## Credits
 #### Eran Weil

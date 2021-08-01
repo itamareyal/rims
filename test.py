@@ -22,44 +22,72 @@ def debug_execution():
 
 def test_delta_t(flash_ratio_lst):
     plot_uid = create_unique_id()
-    runs = 6
-    dc_list = [dc/runs for dc in range(0, runs+1)]
+    runs = 5
+    # dc_list = [dc/runs for dc in range(0, runs+1)]
+    dc_list = [0.8]
     start_time = datetime.now()
     print("Generating Velocity(duty cycle) graph...")
-    plt.figure(plot_uid)
+    # fig, axs = plt.subplots(len(flash_ratio_lst), sharex='all', sharey='all')
+    # fig.suptitle('Vertically stacked subplots')
+    ion_selection = ("Lead Pb+2", diffusion_coefficient_dict["Lead Pb+2"])
+    potential_profile_file = "Segev.csv"
+    L, t_vec, potential_mat = load_data_from_csv("potential profile sources/"+potential_profile_file)
+    x = np.linspace(0, L, num=potential_mat.shape[1])
+    potential_profile = [L, x, t_vec, potential_mat]
+    velocity_av = []
+    var_lst = []
+    simulation_mat = []
 
     for i_f, ratio in enumerate(flash_ratio_lst):
-        velocity_list = []
-        var_lst = []
-        for i_dc, dc in enumerate(dc_list):
-            percentage_progress(i_dc + i_f*len(flash_ratio_lst), runs * len(flash_ratio_lst))
-            ion_selection = d_ion_selection
-            potential_profile = d_potential_profile
-            potential_profile[2][0] = float(dc / d_f)
+        velocity_lst = []
+        simulation_lst = []
+        local_var = []
+        for i_run, run in enumerate(range(runs)):
+            percentage_progress(i_run + i_f * runs, runs * len(flash_ratio_lst))
+
             r = Rims(ion_selection, potential_profile, True)
             r.interval = r.flash_period / ratio
+            r.intervals_in_period = ratio
+            r.ions_lst = [Rims.create_ion(r) for i in range(PARTICLES_SIMULATED)]
             r.run_rims()
-            velocity_list.append(r.velocity)
-            var_lst.append(r.var)
-
-        plt.errorbar(dc_list, velocity_list, yerr=var_lst, label='RIMS: ratio=' + str(ratio))
+            simulation_lst.append(r)
+            velocity_lst.append(r.velocity)
+            local_var.append(r.var)
+        var_lst.append(np.average(local_var))
+        velocity_av.append(np.average(velocity_lst))
+        simulation_mat.append(simulation_lst)
 
     percentage_progress(1, 1)
     print("\nSimulation finished after " + str(datetime.now() - start_time) + "\n")
-    plt.suptitle('RIMS: delta t test', fontsize=12, fontweight='bold')
-    plt.xlabel(r"DC")
-    plt.ylabel(r"Particle velocity [cm/sec]")
-    plt.legend(loc='upper left')
-    plt.axhline(color='r')
-
-    '''documenting graph'''
     folder = 'delta_t_tests'
     if not os.path.exists(folder):
         os.makedirs(folder)
-    file_name = plot_uid + ' Velocity over duty cycle for changing dt'
+
+    '''documenting graph'''
+    fig, axs = plt.subplots()
+    axs.plot(flash_ratio_lst, var_lst)
+    plt.suptitle("RIMS: velocity and variance as a function of T/dt", fontsize=12, fontweight='bold')
+    plt.xlabel("T/dt")
+    plt.ylabel("Variance")
+    file_name = plot_uid + ' variance as a function of ratio'
     plt.savefig(folder + r'/' + file_name + '.jpeg')
-    print('Graph saved to '+folder+' as ' + file_name)
     plt.close(plot_uid)
+
+    with open(folder + r'/' + str(plot_uid)+" delta_t test log.txt", "a") as f:
+        f.write("delta_t test log\n\n")
+        f.write("\ttime created: " + str(plot_uid) + "\n")
+        f.write("\ttest duration: " + str(datetime.now() - start_time) + "\n")
+        f.write("\tion tested, Deff: " + str(ion_selection) + "\n")
+        f.write("\tPotential profile file name: " + potential_profile_file + "\n")
+        f.write("\n-------------RESULTS-------------\n")
+        for i, sim in enumerate(simulation_mat):
+            f.write("\tratio = "+str(flash_ratio_lst[i])+'\n')
+            f.write("\tdelta_t = "+str(simulation_mat[i][0].flash_period / flash_ratio_lst[i])+'\n')
+            f.write("\taverage var = "+str(var_lst[i])+'\n')
+            f.write("\taverage speed = " + str(np.average([sim.velocity for sim in simulation_mat[i]])) + '[cm/sec]\n\n')
+    f.close()
+    print('Graph and log saved to '+folder)
+
     return
 
 def create_i_of_dc_comparison(frequencies, compare):
@@ -244,5 +272,7 @@ def test_decorator():
 '''----------------------------------------------------------------------
                             EXECUTION
 ----------------------------------------------------------------------'''
-test_decorator()
-test_delta_t([50, 100])
+
+if __name__ == '__main__':
+    test_decorator()
+    test_delta_t([150, 200, 250, 300, 350])

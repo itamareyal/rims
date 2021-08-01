@@ -75,10 +75,10 @@ def extract_data_from_interface():
             a = input_check_float("\ta[um] = ") * pow(10, -4)
             b = input_check_float("\tb[um] = ") * pow(10, -4)
             L = a + b
-            A = input_check_float("\tA[v] = ")
+            amp = input_check_float("\tA[v] = ")
             x = np.linspace(0, a + b, num=RESOLUTION)
-            f1 = A * np.divide(x, a)
-            f2 = A * np.divide((x - (a + b)), (-b))
+            f1 = amp * np.divide(x, a)
+            f2 = amp * np.divide((x - (a + b)), (-b))
             step = np.heaviside(x - a, 1)
             pos = f1 - step * f1 + step * f2
 
@@ -293,7 +293,7 @@ def load_data_from_csv(csv_file_path):
     mat_v = np.loadtxt(csv_file_path, skiprows=1, delimiter=',')        # potential profiles
     '''In case only one profile was detected in the file'''
     if mat_v.ndim == 1:
-        print("only 1 profile was detected. adding a second profile such that V2= -"+str(ALPHA)+"*V1")
+        print("only 1 profile was detected. adding a second profile such that V2= "+str(ALPHA)+"*V1")
         mat_v = np.vstack((mat_v, ALPHA * mat_v))
 
     return scalar_x, vec_t, mat_v

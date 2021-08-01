@@ -34,8 +34,12 @@ class Rims:
         :param potential_profile: list holding potential profile shape [L,a1,a2]
         :param fast_mode: indication for no plotting and mid-calculation data savings
         """
+
         '''ratchet attributes'''
         self.ion = ion_subject[0]
+        self.start_time = datetime.now()
+        self.path_for_output = r'RIMS output plots/' + get_time_stamp(self.start_time) + ' ' + self.ion + r'/'
+        self.log = create_log_file(self)
         self.electric_field = 0
         self.potential_profile = 0
         self.diffusion = ion_subject[1]
@@ -52,13 +56,10 @@ class Rims:
 
         '''simulation attributes'''
         self.PARTICLES_SIMULATED = PARTICLES_SIMULATED
-        self.start_time = datetime.now()
-        self.path_for_output = r'RIMS output plots/' + get_time_stamp(self.start_time) + ' ' + self.ion + r'/'
         self.fast_mode = fast_mode
         self.steady_state = False
         self.resolution = RESOLUTION if self.potential_profile_mat.shape[1] < RESOLUTION\
             else self.potential_profile_mat.shape[1]
-        # self.ions_mat = self.generate_ions_mat()
         self.electric_field_mat = self.get_electric_field()
         self.ions_lst = [Rims.create_ion(self) for i in range(PARTICLES_SIMULATED)]
 
@@ -69,6 +70,7 @@ class Rims:
         self.var = 0
         self.current = 0
         self.css = 0
+        write_to_log(self, "RIMS simulation initialized")
 
     def create_ion(self):
         """
@@ -84,6 +86,7 @@ class Rims:
         dx = self.L/self.resolution
         self.electric_field_mat = np.array([-np.gradient(v, dx) for v in self.potential_profile_mat])
         '''plot E & V'''
+        write_to_log(self, "electric field generated")
         if not self.fast_mode:
             plot_potential_profile(self)
         return self.electric_field_mat
@@ -92,8 +95,11 @@ class Rims:
         """
         Calculates the length of a time interval delta_t
         """
+        '''Check for manual dt overwrite in settings'''
         if OVERWRITE_DELTA_T:
+            write_to_log(self, "manual overwrite for delta t detected and is "+str(DELTA_T)+"[usec]")
             return DELTA_T
+        '''Special dt for electrons'''
         if self.ion == "Electrons in Silicon":
             return self.flash_period / INTERVALS_FLASH_RATIO_ELECTRONS
         '''keeps delta t smaller than tau (diffusion time for L)'''
@@ -101,10 +107,13 @@ class Rims:
         '''Further diminishes delta t if its bigger that T/INTERVALS_FLASH_RATIO'''
         while critical_t > self.flash_period / INTERVALS_FLASH_RATIO:
             critical_t /= INTERVALS_FLASH_RATIO
+        write_to_log(self, "delta t calculated and is "+str(critical_t)+"[usec]")
         return critical_t
 
     def get_gamma(self):
-        return BOLTZMANN_CONSTANT * TEMPERATURE / self.diffusion
+        gamma = BOLTZMANN_CONSTANT * TEMPERATURE / self.diffusion
+        write_to_log(self, "gamma factor calculated "+str(gamma)+"[eVsec/cm^2]")
+        return gamma
 
     def check_for_steady_state(self, vt_list):
         """
@@ -113,6 +122,7 @@ class Rims:
         num_discrepancies_allowed = 1
         '''Allow for ss only after MIN_MEASUREMENTS_FOR_SS cycles'''
         if len(vt_list) < MIN_MEASUREMENTS_FOR_SS:
+            write_to_log(self, "cycle count still lower than MIN_MEASUREMENTS_FOR_SS="+str(MIN_MEASUREMENTS_FOR_SS))
             return
         margin = abs(vt_list[-1]) * STEADY_STATE_PERCENT_MARGIN
         mean = np.average(vt_list[-5:])
@@ -127,7 +137,12 @@ class Rims:
             if not self.steady_state:
                 '''Saves the cycle when ss was first reached'''
                 self.css = self.cycles_count
+                write_to_log(self, "steady state reached after "+str(self.css)+" cycles")
+            else:
+                write_to_log(self, "steady state maintained after "+str(self.css)+" cycles")
             self.steady_state = True
+        else:
+            write_to_log(self, "velocity is NOT within margin for steady state. discrepancies="+str(discrepancies))
         return
 
     def generate_ions_mat(self):
@@ -149,6 +164,8 @@ class Rims:
             if ENABLE_VIDEO:
                 self.frames[self.cycles_count][x] = ion_subject.absolute_final_loc  # collect for video
         cycle_v = np.array(cycle_v)
+        write_to_log(self, "cycle " + str(self.cycles_count) + " completed. " +
+                                                               "velocity is " + str(np.average(cycle_v)) + "[cm/sec]")
         return np.average(cycle_v)
 
     def run_rims(self):
@@ -172,18 +189,13 @@ class Rims:
 
         if not self.fast_mode:
             percentage_progress(1, 1)
-            print('\n')
-            if self.steady_state:
-                print('Steady state reached after '+str(self.css)+' ratchet cycles')
-            else:
-                print('Steady state NOT reached after '+str(self.cycles_count)+' ratchet cycles')
-                print('Maximal number of cycles can be edited in settings.csv')
 
         '''Collecting final locations for histogram'''
         for ion_subject in self.ions_lst:
             self.x_results.append(ion_subject.absolute_final_loc)
             if not self.fast_mode:
                 write_to_trace_file(self, ion_subject)
+        write_to_log(self, "data collected for histogram")
 
         self.velocity = np.average(rims_v[1:])
         self.var = np.var(rims_v[1:])
@@ -191,13 +203,14 @@ class Rims:
 
         if not self.fast_mode:
             print("\nSimulation finished after " + str(datetime.now() - self.start_time) + "\n")
-            create_log_file(self)
-            print("Simulation log file saved. plotting graphs...")
+            create_summary_file(self)
 
             '''plotting distribution of particles histogram & average speed plot'''
             x_results = np.array(self.x_results)
             plot_distribution_over_x_histogram(self, x_results)
             plot_average_speed_of_ions(self, rims_v)
+            print("All plots and logs saved to folder " + self.path_for_output + '\n')
+        write_to_log(self, "simulation finished")
         return
 
 
@@ -208,7 +221,7 @@ class Rims:
 def thread_main(ions_lst, v_cycle):
     thread_v = []
     for ion_subject in ions_lst:
-        ion_subject.simulate_ion() # simulate for 1 cycle
+        ion_subject.simulate_ion()  # simulate for 1 cycle
         thread_v.append(ion_subject.velocity)
     thread_v = np.array(thread_v)
     v_cycle.append(np.average(thread_v))
@@ -249,7 +262,7 @@ def execution():
             label = ion_selection[0]
         label += '; '+"{:.3f}".format(r.velocity)+'[cm/sec]'
         plt.hist(x_um, weights=weights, bins=r.resolution, label=label)
-        print_log_file(r)
+        print_summary_file(r)
 
     '''Plotting combined histogram of ions simulated'''
     plt.ylabel('Density')

@@ -1,8 +1,17 @@
-ENABLE_VIDEO,false
+# This is the settings file for RIMS. above every entry in its description.
+# All lines starting with # are ignored by RIMS
+# generate a video of the simulation process. Takes more time.
+ENABLE_VIDEO,true
+# number of particles of each ion type simulated
 PARTICLES_SIMULATED,3000
+# the err margin % allowed for steady state
 STEADY_STATE_PERCENT_MARGIN,0.05
-MAX_CYCLES,20
+# number of flash periods running for all ions
+MAX_CYCLES,15
+# resolution of histogram. 1000 is default
 RESOLUTION,1000
+# number of ratchets in space presented for the periodic histogram. has no impact on results.
 RATCHETS_IN_SYSTEM,4
+# setting to true will take value set in DELTA_T [usec] as the time interval. otherwise RIMS calculates it itself.
 OVERWRITE_DELTA_T,false
-DELTA_T,1
+DELTA_T,0.1

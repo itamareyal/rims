@@ -21,6 +21,8 @@ def load_settings(settings_file):
     with open(settings_file, 'r') as file:
         reader = csv.reader(file)
         for row in reader:
+            if row[0][0] in ['#', '\n']:
+                continue
             value = row[1]
             try:
                 value = float(row[1])
@@ -43,12 +45,12 @@ diffusion_coefficient_dict = load_settings('diffusion_coefficients.csv')
 ----------------------------------------------------------------------'''
 
 '''VERSION'''
-VERSION = '1.9.3'
+VERSION = '1.9.4'
 
 '''DEBUG PARAMETERS'''
 d_alpha = -1
-d_dc = 0.8
-d_f = 600_000
+d_dc = 0.6
+d_f = 900_000
 d_T = 1 / d_f
 d_L = 0.8 * pow(10, -4)
 d_a1 = 0.25
@@ -83,7 +85,7 @@ RESOLUTION = int(settings['RESOLUTION'])
 RATCHETS_IN_SYSTEM = int(settings['RATCHETS_IN_SYSTEM'])
 MIN_MEASUREMENTS_FOR_SS = 10
 OVERWRITE_DELTA_T = detect_bool_from_str(settings['OVERWRITE_DELTA_T'])
-DELTA_T = int(settings['DELTA_T']) * pow(10, -6)
+DELTA_T = float(settings['DELTA_T']) * pow(10, -6)
 
 '''KEDEM PROBLEM PARAMETERS'''
 NE = 1 * pow(10, 15)

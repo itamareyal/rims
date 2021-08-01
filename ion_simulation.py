@@ -25,6 +25,7 @@ class ion:
         self.L = rims.L
 
         '''simulation attributes'''
+        self.rims = rims
         self.ion = rims.ion
         self.loc = np.random.uniform(0, self.L)
         self.x0 = self.loc

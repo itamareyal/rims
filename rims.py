@@ -168,7 +168,7 @@ class Rims:
                                                                "velocity is " + str(np.average(cycle_v)) + "[cm/sec]")
         return np.average(cycle_v)
 
-    def run_rims(self):
+    def run_rims(self, which_ion):
         """
         Running ions in the system and collecting their location after the simulation.
         Creating a histogram from all collected locations
@@ -178,6 +178,7 @@ class Rims:
             create_trace_file(self)
         '''Holds average velocity of all ions per cycle. rims_v[i]=av velocity at cycle i'''
         rims_v = []
+        loc_mat_csv = []
 
         '''Main simulation loop'''
         while self.cycles_count < MAX_CYCLES:
@@ -186,6 +187,19 @@ class Rims:
             rims_v.append(self.get_velocity_over_cycle())
             self.check_for_steady_state(rims_v)
             self.cycles_count += 1
+        intervals = self.intervals_in_period * self.cycles_count
+        if DUMP_ALL_LOCATIONS_TO_CSV:
+            for x in range(intervals):
+                loc_mat_csv.append([])
+            for i in range(intervals):
+                for x, ion in enumerate(self.ions_lst):
+                    loc_mat_csv[i].append(ion.loc_array[i])
+            loc_mat_csv_array = np.array(loc_mat_csv)
+            loc_mat_csv_array = np.matrix.transpose(loc_mat_csv_array)
+            name_of_csv = "ion_locations_" + which_ion + ".csv"
+            with open(name_of_csv, "w+") as my_csv:
+                csvWriter = csv.writer(my_csv, delimiter=',')
+                csvWriter.writerows(loc_mat_csv_array)
 
         if not self.fast_mode:
             percentage_progress(1, 1)
@@ -246,7 +260,7 @@ def execution():
         print('\n-------------------------------------------------------\n')
         print('Simulating '+ion_selection[0]+'; D='+str(ion_selection[1])+'[cm^2/sec]')
         r = Rims(ion_selection, potential_profile, False)
-        r.run_rims()
+        r.run_rims(ion_selection[0])
 
         '''Video'''
         if ENABLE_VIDEO:

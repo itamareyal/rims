@@ -28,6 +28,7 @@ class ion:
         self.rims = rims
         self.ion = rims.ion
         self.loc = np.random.uniform(0, self.L)
+        self.loc_array = []
         self.x0 = self.loc
         self.intervals_count = 0
         self.arena_count = 0
@@ -93,6 +94,8 @@ class ion:
         relative_x0 = (self.arena_count * self.L) + self.loc
         while self.intervals_count < self.intervals_in_period:
             self.loc = self.get_new_x()
+            if DUMP_ALL_LOCATIONS_TO_CSV:
+                self.loc_array.append(self.loc)
             self.intervals_count += 1
 
         '''Calculates absolute location of the ion'''

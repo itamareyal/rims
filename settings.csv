@@ -1,7 +1,7 @@
 # This is the settings file for RIMS. above every entry in its description.
 # All lines starting with # are ignored by RIMS
 # generate a video of the simulation process. Takes more time.
-ENABLE_VIDEO,true
+ENABLE_VIDEO,False
 # number of particles of each ion type simulated
 PARTICLES_SIMULATED,3000
 # the err margin % allowed for steady state
@@ -15,3 +15,5 @@ RATCHETS_IN_SYSTEM,4
 # setting to true will take value set in DELTA_T [usec] as the time interval. otherwise RIMS calculates it itself.
 OVERWRITE_DELTA_T,false
 DELTA_T,0.1
+# create csv file with all particle locations at all time intervals
+DUMP_ALL_LOCATIONS_TO_CSV,false

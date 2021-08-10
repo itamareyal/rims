@@ -10,7 +10,7 @@ Calculates the location of an ion for every time interval.
                             IMPLEMENTATIONS
 ----------------------------------------------------------------------'''
 
-class ion:
+class Ion:
     def __init__(self, rims):
         """
         Instance holding ion under test
@@ -94,8 +94,7 @@ class ion:
         relative_x0 = (self.arena_count * self.L) + self.loc
         while self.intervals_count < self.intervals_in_period:
             self.loc = self.get_new_x()
-            if DUMP_ALL_LOCATIONS_TO_CSV:
-                self.loc_array.append(self.loc)
+            self.loc_array.append(self.loc)
             self.intervals_count += 1
 
         '''Calculates absolute location of the ion'''

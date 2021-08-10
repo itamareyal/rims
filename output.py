@@ -131,15 +131,14 @@ def create_trace_file(rims_object):
         os.makedirs(rims_object.path_for_output)
     with open(rims_object.path_for_output + 'simulation trace.csv', newline='', mode='a') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(['X0[cm]', 'X' + str(MAX_CYCLES * rims_object.intervals_in_period) + '[cm]'])
-    write_to_log(rims_object, "trace file created")
+        title_row = [f"x{i}" for i in range(MAX_CYCLES * rims_object.intervals_in_period)]
+        writer.writerow(title_row)
 
-def write_to_trace_file(rims_object, ion_subject):
-    if not os.path.exists(rims_object.path_for_output):
-        os.makedirs(rims_object.path_for_output)
-    with open(rims_object.path_for_output + 'simulation trace.csv', newline='', mode='a') as csv_file:
-        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow([ion_subject.x0, ion_subject.L * ion_subject.arena_count + ion_subject.loc])
+        for ion in rims_object.ions_lst:
+            writer.writerow(ion.loc_array)
+    write_to_log(rims_object, "trace file created")
+    return
+
 
 def create_log_file(rims_object):
     if not os.path.exists(rims_object.path_for_output):
@@ -153,6 +152,7 @@ def write_to_log(rims_object, line):
     ts = str(datetime.now().strftime("%X")) + ' -\t'
     with open(file, "a") as f:
         f.write(ts + str(line) + '\n')
+    return
 
 def create_summary_file(rims_object):
     if not os.path.exists(rims_object.path_for_output):
@@ -184,6 +184,7 @@ def create_summary_file(rims_object):
         f.write("\tvelocity: " + str(rims_object.velocity) + "[cm/sec]\n")
     write_to_log(rims_object, "summary file created")
     f.close()
+    return
 
 def print_summary_file(rims_object):
     with open(rims_object.path_for_output+"RIMS simulation summary.txt", "r") as f:
@@ -191,6 +192,7 @@ def print_summary_file(rims_object):
         print(log)
     write_to_log(rims_object, "summary file printed")
     f.close()
+    return
 
 
 '''----------------PLOTS----------------'''
@@ -235,7 +237,7 @@ def plot_average_speed_of_ions(rims_object, v_plot_list):
     plt.xlabel(r"Ratchet Cycle")
     plt.ylabel(r"Particle Velocity [cm/sec]")
     plt.suptitle("RIMS: Average speed of ions over ratchet cycles", fontsize=14, fontweight='bold')
-    save_plots(rims_object, 'Average speed of ions over ratchet cycles',unique_id)
+    save_plots(rims_object, 'Average speed of ions over ratchet cycles', unique_id)
     write_to_log(rims_object, "average speed plot saved")
     return
 
@@ -355,6 +357,7 @@ def percentage_progress(n, N):
     progress = int(n * 100) / int(N)
     sys.stdout.write("\r%d%%" % progress)
     sys.stdout.flush()
+    return
 
 def create_test_csv(rims_object):
     if not os.path.exists(rims_object.path_for_output):
@@ -369,6 +372,8 @@ def create_test_csv(rims_object):
         writer.writerow(v + 1 for v in rims_object.electric_field)
     csv_file.close()
     print("test csv printed")
+    return
 
 def warning_to_console(msg):
     print("\tWARNING: "+msg)
+    return

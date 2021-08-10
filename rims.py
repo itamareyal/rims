@@ -38,7 +38,7 @@ class Rims:
         '''ratchet attributes'''
         self.ion = ion_subject[0]
         self.start_time = datetime.now()
-        self.path_for_output = r'RIMS output plots/' + get_time_stamp(self.start_time) + ' ' + self.ion + r'/'
+        self.path_for_output = r'simulation outputs/' + get_time_stamp(self.start_time) + ' ' + self.ion + r'/'
         self.log = create_log_file(self)
         self.electric_field = 0
         self.potential_profile = 0
@@ -61,7 +61,7 @@ class Rims:
         self.resolution = RESOLUTION if self.potential_profile_mat.shape[1] < RESOLUTION\
             else self.potential_profile_mat.shape[1]
         self.electric_field_mat = self.get_electric_field()
-        self.ions_lst = [Rims.create_ion(self) for i in range(PARTICLES_SIMULATED)]
+        self.ions_lst = [Rims.create_ion(self) for _ in range(PARTICLES_SIMULATED)]
 
         '''result attributes'''
         self.x_results = []
@@ -77,7 +77,7 @@ class Rims:
         Creates ion class instance to be simulated
         :return: ion instance
         """
-        return ion(self)
+        return Ion(self)
 
     def get_electric_field(self):
         """
@@ -148,7 +148,7 @@ class Rims:
     def generate_ions_mat(self):
         ions_mat = []
         for thread in range(NUMBER_OF_THREADS):
-            ions_lst = [Rims.create_ion(self) for i in range(IONS_PER_THREAD)]
+            ions_lst = [Rims.create_ion(self) for _ in range(IONS_PER_THREAD)]
             ions_mat.append(ions_lst)
         return ions_mat
 
@@ -168,17 +168,16 @@ class Rims:
                                                                "velocity is " + str(np.average(cycle_v)) + "[cm/sec]")
         return np.average(cycle_v)
 
-    def run_rims(self, which_ion):
+    def run_rims(self):
         """
         Running ions in the system and collecting their location after the simulation.
         Creating a histogram from all collected locations
         """
         if not self.fast_mode:
             print("\nRIMS simulation in progress...")
-            create_trace_file(self)
+
         '''Holds average velocity of all ions per cycle. rims_v[i]=av velocity at cycle i'''
         rims_v = []
-        loc_mat_csv = []
 
         '''Main simulation loop'''
         while self.cycles_count < MAX_CYCLES:
@@ -187,19 +186,6 @@ class Rims:
             rims_v.append(self.get_velocity_over_cycle())
             self.check_for_steady_state(rims_v)
             self.cycles_count += 1
-        intervals = self.intervals_in_period * self.cycles_count
-        if DUMP_ALL_LOCATIONS_TO_CSV:
-            for x in range(intervals):
-                loc_mat_csv.append([])
-            for i in range(intervals):
-                for x, ion in enumerate(self.ions_lst):
-                    loc_mat_csv[i].append(ion.loc_array[i])
-            loc_mat_csv_array = np.array(loc_mat_csv)
-            loc_mat_csv_array = np.matrix.transpose(loc_mat_csv_array)
-            name_of_csv = "ion_locations_" + which_ion + ".csv"
-            with open(name_of_csv, "w+") as my_csv:
-                csvWriter = csv.writer(my_csv, delimiter=',')
-                csvWriter.writerows(loc_mat_csv_array)
 
         if not self.fast_mode:
             percentage_progress(1, 1)
@@ -207,8 +193,7 @@ class Rims:
         '''Collecting final locations for histogram'''
         for ion_subject in self.ions_lst:
             self.x_results.append(ion_subject.absolute_final_loc)
-            if not self.fast_mode:
-                write_to_trace_file(self, ion_subject)
+
         write_to_log(self, "data collected for histogram")
 
         self.velocity = np.average(rims_v[1:])
@@ -218,6 +203,8 @@ class Rims:
         if not self.fast_mode:
             print("\nSimulation finished after " + str(datetime.now() - self.start_time) + "\n")
             create_summary_file(self)
+            if CREATE_TRACE:
+                create_trace_file(self)
 
             '''plotting distribution of particles histogram & average speed plot'''
             x_results = np.array(self.x_results)
@@ -239,6 +226,7 @@ def thread_main(ions_lst, v_cycle):
         thread_v.append(ion_subject.velocity)
     thread_v = np.array(thread_v)
     v_cycle.append(np.average(thread_v))
+    return
 
 
 def execution():
@@ -260,7 +248,7 @@ def execution():
         print('\n-------------------------------------------------------\n')
         print('Simulating '+ion_selection[0]+'; D='+str(ion_selection[1])+'[cm^2/sec]')
         r = Rims(ion_selection, potential_profile, False)
-        r.run_rims(ion_selection[0])
+        r.run_rims()
 
         '''Video'''
         if ENABLE_VIDEO:
@@ -298,6 +286,8 @@ def execution():
 
     if execution_rerun_panel():
         execution()
+
+    return
 
 
 '''----------------------------------------------------------------------

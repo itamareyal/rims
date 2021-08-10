@@ -45,7 +45,7 @@ diffusion_coefficient_dict = load_settings('diffusion_coefficients.csv')
 ----------------------------------------------------------------------'''
 
 '''VERSION'''
-VERSION = '1.9.4'
+VERSION = '1.9.5'
 
 '''DEBUG PARAMETERS'''
 d_alpha = -1
@@ -73,7 +73,7 @@ TEMPERATURE = 293
 
 '''SIMULATION PARAMETERS'''
 ENABLE_VIDEO = detect_bool_from_str(settings['ENABLE_VIDEO'])
-DUMP_ALL_LOCATIONS_TO_CSV = detect_bool_from_str(settings['DUMP_ALL_LOCATIONS_TO_CSV'])
+CREATE_TRACE = detect_bool_from_str(settings['CREATE_TRACE'])
 ALPHA = -1
 PARTICLES_SIMULATED = int(settings['PARTICLES_SIMULATED'])
 STEADY_STATE_PERCENT_MARGIN = float(settings['STEADY_STATE_PERCENT_MARGIN'])

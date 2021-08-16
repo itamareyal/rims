@@ -97,7 +97,7 @@ class Rims:
         """
         '''Check for manual dt overwrite in settings'''
         if OVERWRITE_DELTA_T:
-            write_to_log(self, "manual overwrite for delta t detected and is "+str(DELTA_T)+"[usec]")
+            write_to_log(self, "manual overwrite for delta t detected and is "+str(DELTA_T)+"[sec]")
             return DELTA_T
         '''Special dt for electrons'''
         if self.ion == "Electrons in Silicon":

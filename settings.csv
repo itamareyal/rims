@@ -16,4 +16,4 @@ RATCHETS_IN_SYSTEM,4
 OVERWRITE_DELTA_T,false
 DELTA_T,0.1
 # create csv file with all particle locations at all time intervals
-CREATE_TRACE,false
+CREATE_TRACE,False

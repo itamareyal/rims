@@ -94,7 +94,7 @@ class Ion:
         relative_x0 = (self.arena_count * self.L) + self.loc
         while self.intervals_count < self.intervals_in_period:
             self.loc = self.get_new_x()
-            self.loc_array.append(self.loc)
+            self.loc_array.append(self.L * self.arena_count + self.loc)
             self.intervals_count += 1
 
         '''Calculates absolute location of the ion'''

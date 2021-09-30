@@ -3,6 +3,7 @@ from current_calc import *
 from output import *
 from defines import *
 from interface import *
+import PySimpleGUIQt as sg
 
 """"
 rims.py
@@ -55,17 +56,18 @@ class Rims:
         self.cycles_count = 0
 
         '''simulation attributes'''
-        self.PARTICLES_SIMULATED = PARTICLES_SIMULATED
+        self.settings = load_settings(settings_filename)
         self.fast_mode = fast_mode
         self.steady_state = False
         self.resolution = RESOLUTION if self.potential_profile_mat.shape[1] < RESOLUTION\
             else self.potential_profile_mat.shape[1]
         self.electric_field_mat = self.get_electric_field()
-        self.ions_lst = [Rims.create_ion(self) for _ in range(PARTICLES_SIMULATED)]
+        self.ions_lst = [Rims.create_ion(self) for _ in range(self.settings['PARTICLES_SIMULATED'])]
+        self.gui = None
 
         '''result attributes'''
         self.x_results = []
-        self.frames = np.zeros(shape=(MAX_CYCLES+1, PARTICLES_SIMULATED+1))
+        self.frames = np.zeros(shape=(load_one_setting(settings_filename,'MAX_CYCLES')+1, self.settings['PARTICLES_SIMULATED']+1))
         self.velocity = 0
         self.var = 0
         self.current = 0
@@ -124,7 +126,7 @@ class Rims:
         if len(vt_list) < MIN_MEASUREMENTS_FOR_SS:
             write_to_log(self, "cycle count still lower than MIN_MEASUREMENTS_FOR_SS="+str(MIN_MEASUREMENTS_FOR_SS))
             return
-        margin = abs(vt_list[-1]) * STEADY_STATE_PERCENT_MARGIN
+        margin = abs(vt_list[-1]) * self.settings['STEADY_STATE_PERCENT_MARGIN']
         mean = np.average(vt_list[-5:])
         discrepancies = 0
         for i in range(5):
@@ -147,7 +149,7 @@ class Rims:
 
     def generate_ions_mat(self):
         ions_mat = []
-        for thread in range(NUMBER_OF_THREADS):
+        for thread in range(10):
             ions_lst = [Rims.create_ion(self) for _ in range(IONS_PER_THREAD)]
             ions_mat.append(ions_lst)
         return ions_mat
@@ -161,11 +163,12 @@ class Rims:
             '''simulate all ions for 1 cycle'''
             ion_subject.simulate_ion()
             cycle_v.append(ion_subject.velocity)
-            if ENABLE_VIDEO:
+            if load_one_setting(settings_filename,'ENABLE_VIDEO'):
                 self.frames[self.cycles_count][x] = ion_subject.absolute_final_loc  # collect for video
         cycle_v = np.array(cycle_v)
         write_to_log(self, "cycle " + str(self.cycles_count) + " completed. " +
                                                                "velocity is " + str(np.average(cycle_v)) + "[cm/sec]")
+        self.gui.Refresh() if self.gui else None
         return np.average(cycle_v)
 
     def run_rims(self):
@@ -180,15 +183,14 @@ class Rims:
         rims_v = []
 
         '''Main simulation loop'''
-        while self.cycles_count < MAX_CYCLES:
-            if not self.fast_mode:
-                percentage_progress(self.cycles_count, MAX_CYCLES)
+        while self.cycles_count <= load_one_setting(settings_filename,'MAX_CYCLES'):
+            #sg.one_line_progress_meter('RIMS simulation', self.cycles_count, MAX_CYCLES, 'key',
+            #'Ion type: '+self.ion, orientation='h')
+
+            percentage_progress(self.cycles_count, load_one_setting(settings_filename,'MAX_CYCLES'), self)
             rims_v.append(self.get_velocity_over_cycle())
             self.check_for_steady_state(rims_v)
             self.cycles_count += 1
-
-        if not self.fast_mode:
-            percentage_progress(1, 1)
 
         '''Collecting final locations for histogram'''
         for ion_subject in self.ions_lst:
@@ -203,8 +205,8 @@ class Rims:
         if not self.fast_mode:
             print("\nSimulation finished after " + str(datetime.now() - self.start_time) + "\n")
             create_summary_file(self)
-            if CREATE_TRACE:
-                create_trace_file(self)
+            
+            create_trace_file(self) if load_one_setting(settings_filename,'CREATE_TRACE') else None
 
             '''plotting distribution of particles histogram & average speed plot'''
             x_results = np.array(self.x_results)
@@ -228,19 +230,24 @@ def thread_main(ions_lst, v_cycle):
     v_cycle.append(np.average(thread_v))
     return
 
+def set_gui(rims_object, ions_simulated, pb_iter, gui):
+    gui.Refresh() if gui else None
+    rims_object.gui = gui
+    if gui:
+        rims_object.pb = gui['progressbar']
+        rims_object.pb_iter = pb_iter
+        rims_object.pb_max = ions_simulated * load_one_setting(settings_filename,'MAX_CYCLES')
 
-def execution():
+def execution(ion_selection_dict, potential_profile, gui=None):
     """
     creating a new simulation environment and launching it
     """
-    '''Extraction of data from interface'''
-    ion_selection_dict = ion_selection_panel()
-    potential_profile = extract_data_from_interface()
-
-    plot_id = create_unique_id()
-    plt.figure(plot_id)
+    headline_panel()
+    simulations = []
 
     video_3d_mat = []
+
+    pb_iter = 0
 
     '''Simulating for every ion specified'''
     for key, value in ion_selection_dict.items():
@@ -248,23 +255,44 @@ def execution():
         print('\n-------------------------------------------------------\n')
         print('Simulating '+ion_selection[0]+'; D='+str(ion_selection[1])+'[cm^2/sec]')
         r = Rims(ion_selection, potential_profile, False)
+        set_gui(r, len(ion_selection_dict.items()), pb_iter, gui)
         r.run_rims()
+        simulations.append(r)
+        pb_iter = r.pb_iter if gui else None
 
         '''Video'''
-        if ENABLE_VIDEO:
-            video_3d_mat.append(r.frames)
+        video_3d_mat.append(r.frames) if load_one_setting(settings_filename,'ENABLE_VIDEO') else None
 
+        print_summary_file(r)
+
+    plot_multiple_ions_hist(simulations)
+    '''Video'''
+    if load_one_setting(settings_filename,'ENABLE_VIDEO'):
+        create_video_of_histograms(video_3d_mat, ion_selection_dict, simulations[0])
+
+    simulation_over_panel()
+    if __name__ == '__main__':
+        if execution_rerun_panel():
+            execution(ion_selection_dict, potential_profile)
+
+    return
+
+def plot_multiple_ions_hist(simulations):
+    plot_id = create_unique_id()
+    plt.figure(plot_id)
+    for r in simulations:
         '''Adding distribution data for the complete histogram'''
         x = r.x_results
         weights = np.ones_like(x) / float(len(x))
         x_um = [x * np.power(10, 4) for x in x]
+        ion_selection = (r.ion, r.diffusion)
         if ion_selection[0][:6] == 'manual':
             label = 'D='+str(ion_selection[1])
         else:
             label = ion_selection[0]
         label += '; '+"{:.3f}".format(r.velocity)+'[cm/sec]'
         plt.hist(x_um, weights=weights, bins=r.resolution, label=label)
-        print_summary_file(r)
+        write_to_log(r, "Data added to multiple ions histogram")
 
     '''Plotting combined histogram of ions simulated'''
     plt.ylabel('Density')
@@ -273,21 +301,20 @@ def execution():
     plt.title(r"RIMS: Histogram of distribution x axis: $\rho $(x)", fontsize=14, fontweight='bold')
     time_stamp = get_time_stamp(datetime.now())
     file_name = str(time_stamp) + ' Distribution histogram'
-    folder = 'Multiple ions histogram'
+
+    for r in simulations:
+        if not os.path.exists(r.path_for_output):
+            os.makedirs(r.path_for_output)
+        plt.savefig(r.path_for_output + file_name)
+        write_to_log(r, "Multiple ions histogram saved")
+
+    folder = r'simulation outputs/00_Multiple ions histogram'
     if not os.path.exists(folder):
         os.makedirs(folder)
     plt.savefig(folder+r'/'+file_name)
     plt.close(plot_id)
     print('Histogram of all ions simulated saved in '+folder+' as '+file_name+'.jpeg')
 
-    '''Video'''
-    if ENABLE_VIDEO:
-        create_video_of_histograms(video_3d_mat, ion_selection_dict)
-
-    if execution_rerun_panel():
-        execution()
-
-    return
 
 
 '''----------------------------------------------------------------------
@@ -296,5 +323,8 @@ def execution():
 
 if __name__ == '__main__':
 
-    headline_panel()
-    execution()
+    '''Extraction of data from interface'''
+    ion_selection_dict = ion_selection_panel()
+    potential_profile = extract_data_from_interface()
+    '''Running simulation'''
+    execution(ion_selection_dict, potential_profile)

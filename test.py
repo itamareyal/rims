@@ -43,12 +43,12 @@ def test_delta_t(flash_ratio_lst):
         simulation_lst = []
         local_var = []
         for i_run, run in enumerate(range(runs)):
-            percentage_progress(i_run + i_f * runs, runs * len(flash_ratio_lst))
+            percentage_progress(i_run + i_f * runs, runs * len(flash_ratio_lst), None)
 
             r = Rims(ion_selection, potential_profile, True)
             r.interval = r.flash_period / ratio
             r.intervals_in_period = ratio
-            r.ions_lst = [Rims.create_ion(r) for i in range(PARTICLES_SIMULATED)]
+            r.ions_lst = [Rims.create_ion(r) for i in range(r.settings['PARTICLES_SIMULATED'])]
             r.run_rims()
             simulation_lst.append(r)
             velocity_lst.append(r.velocity)
@@ -57,7 +57,6 @@ def test_delta_t(flash_ratio_lst):
         velocity_av.append(np.average(velocity_lst))
         simulation_mat.append(simulation_lst)
 
-    percentage_progress(1, 1)
     print("\nSimulation finished after " + str(datetime.now() - start_time) + "\n")
     folder = 'delta_t_tests'
     if not os.path.exists(folder):
@@ -106,7 +105,7 @@ def create_i_of_dc_comparison(frequencies, compare):
         velocity_list = []
         k_currents = []
         for i_dc, dc in enumerate(dc_list):
-            percentage_progress(i_dc + i_f*len(frequencies), runs * len(frequencies))
+            percentage_progress(i_dc + i_f*len(frequencies), runs * len(frequencies), None)
             ion_selection = d_ion_selection
             potential_profile = d_potential_profile
             potential_profile[2][0] = float(dc / frequency)
@@ -127,7 +126,6 @@ def create_i_of_dc_comparison(frequencies, compare):
         if compare:
             plt.plot(dc_list, k_currents, label='Kedem: '+str(int(frequency / 1000)) + "KHz")
 
-    percentage_progress(1, 1)
     print("\nSimulation finished after " + str(datetime.now() - start_time) + "\n")
     plt.suptitle('RIMS: current changing over DC', fontsize=12, fontweight='bold')
     plt.xlabel(r"DC")
@@ -158,7 +156,7 @@ def create_i_of_f_comparison(dc, compare):
 
     '''Iterating over different frequencies'''
     for i_f, frequency in enumerate(f_list):
-        percentage_progress(i_f, len(f_list))
+        percentage_progress(i_f, len(f_list),None)
         ion_selection = d_ion_selection
         potential_profile = d_potential_profile
         potential_profile[2][0] = float(dc / frequency)
@@ -227,7 +225,7 @@ def create_heat_map():
     for i_f, f_input in enumerate(f_list):
         velocity_vector = np.zeros(resolution_dc)
         for i_dc, dc_input in enumerate(dc_list):
-            percentage_progress(i_dc + i_f * resolution_dc, resolution_dc * resolution_f)
+            percentage_progress(i_dc + i_f * resolution_dc, resolution_dc * resolution_f, None)
             dc_input = dc_list[i_dc]
             f_input = f_list[i_f]
             ion_selection = d_ion_selection
@@ -240,7 +238,6 @@ def create_heat_map():
             velocity_vector[i_dc] = velocity_calculated
 
         matrix[:, i_f] = velocity_vector
-    percentage_progress(1, 1)
     print("\nSimulation finished after " + str(datetime.now() - start_time) + "\n")
 
     '''Plotting heat-map'''

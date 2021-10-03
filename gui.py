@@ -1,4 +1,5 @@
 import PySimpleGUI as sg
+from PySimpleGUI.PySimpleGUI import No
 import numpy
 from rims import *
 
@@ -10,6 +11,8 @@ BUTTON_SIZE = (15, 1.1)
 PROGRESS_BAR_SIZE = (10, 0.5)
 OUTPUT_SIZE = (100, 6)
 LISTBOX_SIZE = (80, 3)
+FILELIST_SIZE = (25, 12)
+TEXT_OUTPUT_SIZE = (600, None)
 MENU_FONT = 'Any 15'
 TAB_FONT = 'Any 25'
 BUTTON_FONT = 'Any 15'
@@ -18,11 +21,39 @@ BUTTON_FONT = 'Any 15'
                             FUNCTIONS
 ----------------------------------------------------------------------'''
 
+def play_video(video_file):
+    cap = cv2.VideoCapture(video_file)
+
+    fps = 1000
+    frames = []
+
+    #Play the video once and store the frames in an array
+    while cap.isOpened():
+        _ret, frame = cap.read()        
+        if frame is None:
+            break
+        frames.append(frame)
+    cap.release()
+    end = False
+    while True:
+        if end:
+            break
+        for frame in frames:
+            cv2.imshow("ESC to close",frame)
+            k = cv2.waitKey(int(1000)) & 0xFF
+
+            #End with ESC
+            if k == 27:
+                end = True
+                break
+    cap.release()
+    cv2.destroyAllWindows()
+
 def preview_ratchet(l_s, x_v, t_v, v_m, filename):
     "Creates an image preview to be displayed in gui"
     number_of_profiles = v_m.shape[0]
     x = [dx * pow(10, 4) for dx in x_v]
-    dx = l_s/RESOLUTION
+    dx = l_s/load_one_setting(settings_filename,'RESOLUTION')
     
     fig, axs = plt.subplots(number_of_profiles)
     plt.suptitle('Preview: '+filename, fontsize=10, fontweight='bold')
@@ -59,7 +90,42 @@ def r_print(line):
     else:
         sg.Print(line)
 
+def display_folder_csv(folder):
+    try:
+        file_list = os.listdir(folder)
+    except:
+        file_list = []
+
+    fnames = [
+        f
+        for f in file_list
+        if os.path.isfile(os.path.join(folder, f))
+        and f.lower().endswith((".csv"))
+    ]
+    return fnames
+
+def display_folder_all(folder):
+    try:
+        file_list = os.listdir(folder)
+    except:
+        file_list = []
+    fnames = [
+        f
+        for f in file_list
+        
+        if os.path.isfile(os.path.join(folder, f))
+        and (f.lower().endswith((".csv")) 
+        or f.lower().endswith((".png")) 
+        or f.lower().endswith((".jpeg"))
+        or f.lower().endswith((".avi"))
+        or f.lower().endswith((".txt")))
+        or os.path.isdir(os.path.join(folder, f.lower()))
+    ]
+    fnames = sorted(fnames, key=sort_output_folders)
+    return fnames
+
 potential_profiles_folder = "potential profile sources"
+histogram_folder = "simulation outputs"
 
 '''----------------------------------------------------------------------
                             LAYOUTS
@@ -67,11 +133,10 @@ potential_profiles_folder = "potential profile sources"
 
 # --------------------------- Potential profile tab --------------------------- #
 file_list_column = [
-    [   sg.Button('Load Profiles',size=BUTTON_SIZE, font=BUTTON_FONT)],
     [   sg.In( enable_events=True, key="-FOLDER-", default_text=potential_profiles_folder, size=(20,1), font=MENU_FONT),
         sg.FolderBrowse(initial_folder=potential_profiles_folder,button_text="Browse", font=MENU_FONT),
     ],
-    [   sg.Listbox(values=[], enable_events=True, key="-FILE LIST-",font=MENU_FONT)
+    [   sg.Listbox(values=display_folder_csv(potential_profiles_folder), enable_events=True, key="-FILE LIST-",font=MENU_FONT)
     ],
 ]
 
@@ -114,12 +179,40 @@ layout_settings = [
     [   sg.Text("Resolution", font=MENU_FONT, tooltip='Resolution of histogram. 1000 is recommended'),sg.In(enable_events=True,default_text=load_one_setting(settings_filename,'resolution') ,key="resolution", font=MENU_FONT)],
     [   sg.Text("Ratchets in display", font=MENU_FONT, tooltip='The number of ratchets in space displayed in the periodic histogram. has no impact on results.'),sg.In(enable_events=True,default_text=load_one_setting(settings_filename,'ratchets_in_system') ,key="ratchets_in_system", font=MENU_FONT)],
 ]
+# --------------------------- Outputs tab --------------------------- #
+output_list_column = [
+    [   sg.In( enable_events=True, key="-RESULTS_FOLDER-", default_text=histogram_folder, size=(20,1), font=MENU_FONT),
+        sg.FolderBrowse(initial_folder=histogram_folder, button_text="Browse", font=MENU_FONT),
+    ],
+    [
+        sg.Button('Simulation outputs folder', font=MENU_FONT, size=(20,1))
+    ],
+    [   sg.Listbox(values=display_folder_all(histogram_folder), enable_events=True, key="-RESULTS_LIST-",font=MENU_FONT)
+    ],
+]
+
+output_tab_img = [[   sg.Image(key="-RESULTS_IMAGE-",filename=potential_profiles_folder+r'/'+'blank_preview.jpeg')]]
+output_tab_txt = [[   sg.Multiline(key="-RESULTS_MLINE-", font=MENU_FONT,size=TEXT_OUTPUT_SIZE)]]
+
+output_tabgroup = [[sg.TabGroup([
+    [sg.Tab('img', output_tab_img, key='tab_img'),
+    sg.Tab('txt', output_tab_txt, key='tab_txt'),]
+])]]
+
+layout_output = [
+    [
+        sg.Column(output_list_column, size=(10,1)),
+        sg.VSeperator(),
+        sg.Column(output_tabgroup, size=(10,1)),
+    ]
+]
 
 # --------------------------- Full layout --------------------------- #
 tabgroup = sg.TabGroup([
     [   sg.Tab('Potential profile', layout_potential_profile,font=TAB_FONT),
         sg.Tab('Ions selection',layout_ions,font=TAB_FONT),
-        sg.Tab('Settings', layout_settings,font=TAB_FONT)
+        sg.Tab('Settings', layout_settings,font=TAB_FONT),
+        sg.Tab('Outputs', layout_output,font=TAB_FONT)
     ]],font=TAB_FONT,tab_location='lefttop',title_color='white', background_color='#8B8B83', selected_title_color='#607B8B',
     ) 
         
@@ -142,20 +235,9 @@ while True:
         break
 
     # --------------------------- Potential profile events --------------------------- #
-    if event == 'Load Profiles':
+    if event == "-FOLDER-":
         folder = values["-FOLDER-"]
-        try:
-            file_list = os.listdir(folder)
-        except:
-            file_list = []
-
-        fnames = [
-            f
-            for f in file_list
-            if os.path.isfile(os.path.join(folder, f))
-            and f.lower().endswith((".csv"))
-        ]
-        window["-FILE LIST-"].update(fnames)
+        window["-FILE LIST-"].update(display_folder_csv(folder))
     elif event == "-FILE LIST-":
         try:
             ratchetfile = values["-FILE LIST-"][0]
@@ -228,6 +310,43 @@ while True:
             window['Status'].update("Simulation finished!")
         else:
             window['Status'].update("Select both Potential profile and ion/s")
+
+    # --------------------------- outputs events --------------------------- #
+    elif event == "-RESULTS_FOLDER-":
+        folder = values["-RESULTS_FOLDER-"]
+        window["-RESULTS_LIST-"].update(display_folder_all(folder))
+    elif event == "-RESULTS_LIST-":
+        try:
+            output_file = values["-RESULTS_LIST-"][0]
+            filename = os.path.join(
+                values["-RESULTS_FOLDER-"], values["-RESULTS_LIST-"][0]
+            )
+            if filename.lower().endswith('.txt') or filename.lower().endswith('.csv'):
+                with open(filename) as txt_file:
+                    lines = txt_file.read()
+
+                window["-RESULTS_MLINE-"].update(lines)
+                window['tab_txt'].select()
+                #window["-RESULTS_MLINE-"].update(visible=True)
+                #txt_file.close()
+                #window["-RESULTS_IMAGE-"].update(disabled=True)
+            elif filename.lower().endswith('.jpeg') or filename.lower().endswith('.png'):
+                window["-RESULTS_IMAGE-"].update(filename=filename)
+                window['tab_img'].select()
+
+            elif filename.lower().endswith('.avi'):
+                play_video(filename)
+
+            elif os.path.isdir(filename.lower()):
+                folder = filename
+                window["-RESULTS_FOLDER-"].update(folder)
+                window["-RESULTS_LIST-"].update(display_folder_all(folder))
+        except:
+            pass
+    elif event == 'Simulation outputs folder':
+        window["-RESULTS_FOLDER-"].update(histogram_folder)
+        window["-RESULTS_LIST-"].update(display_folder_all(histogram_folder))
+
 
 window.close()
 

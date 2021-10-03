@@ -77,7 +77,7 @@ def extract_data_from_interface():
             b = input_check_float("\tb[um] = ") * pow(10, -4)
             L = a + b
             amp = input_check_float("\tA[v] = ")
-            x = np.linspace(0, a + b, num=RESOLUTION)
+            x = np.linspace(0, a + b, num=load_one_setting(settings_filename,'RESOLUTION'))
             f1 = amp * np.divide(x, a)
             f2 = amp * np.divide((x - (a + b)), (-b))
             step = np.heaviside(x - a, 1)
@@ -98,7 +98,7 @@ def extract_data_from_interface():
             a1 = input_check_float("\ta1[v] = ")
             a2 = input_check_float("\ta2[v] = ")
 
-            x = np.linspace(0, L, num=RESOLUTION)
+            x = np.linspace(0, L, num=load_one_setting(settings_filename,'RESOLUTION'))
             pos = a1 * np.sin(2 * np.pi * x / L) + a2 * np.sin(4 * np.pi * x / L)
         print("Select relative amplitude for the negative profile.\nMeaning V- = V+ * -ALPHA")
         print("Enter ALPHA as positive float or integer")

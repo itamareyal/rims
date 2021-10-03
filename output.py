@@ -17,7 +17,7 @@ Creates and writes data to log, trace and plot
 ----------------------------------------------------------------------'''
 
 '''----------------VIDEO----------------'''
-def create_video_of_histograms(frame_mat, ion_dict):
+def create_video_of_histograms(frame_mat, ion_dict, rims_object):
     """
     Top video function. creates a video out of frames mat
     :param frame_mat: histograms of distribution by cycled. x axis is distribution, y is cycles
@@ -25,7 +25,7 @@ def create_video_of_histograms(frame_mat, ion_dict):
     """
     print('\n-------------------------------------------------------\n')
     print('Generating video...')
-    frame_folder = r'Video outputs'
+    frame_folder = r'simulation outputs/00_Video outputs'
     if not os.path.exists(frame_folder):
         os.makedirs(frame_folder)
 
@@ -34,10 +34,10 @@ def create_video_of_histograms(frame_mat, ion_dict):
     for file in os.listdir('.'):
         if file.startswith("cycle"):
             os.remove(file)
-    os.chdir('..')
+    os.chdir(r'../..')
 
     '''Creating histogram for each cycle'''
-    for cycle in range(MAX_CYCLES):
+    for cycle in range(load_one_setting(settings_filename,'MAX_CYCLES')):
         plt.figure(cycle)
         max_x = np.max(frame_mat) * pow(10, 4)
         min_x = np.min(frame_mat) * pow(10, 4)
@@ -46,7 +46,7 @@ def create_video_of_histograms(frame_mat, ion_dict):
         '''Adding all ions to the cycle histogram'''
         for i_ion, ion in enumerate(ion_dict.items()):
             percentage_progress(cycle * len(ion_dict.items()) + i_ion,
-                                MAX_CYCLES * len(ion_dict.items()))
+                                load_one_setting(settings_filename,'MAX_CYCLES') * len(ion_dict.items()), rims_object)
             x_results = frame_mat[i_ion][cycle]
             x_results_um = [dx * pow(10, 4) for dx in x_results]
             weights = np.ones_like(x_results_um) / float(len(x_results_um))
@@ -59,11 +59,10 @@ def create_video_of_histograms(frame_mat, ion_dict):
         plt.legend(loc='upper left')
         '''Documenting histogram'''
         file_name = 'cycle_' + str(cycle)
-        plt.savefig(frame_folder + '/' + file_name + '.jpeg')
+        plt.savefig(frame_folder+'/'+file_name+'.jpeg')
         plt.close(cycle)
     video_name = str(create_unique_id()) + ' Distribution video.avi'
     generate_video_from_frames(frame_folder + r'/', video_name)
-    percentage_progress(1, 1)
     print("\nVideo saved to " + frame_folder + " as " + video_name)
 
 def generate_video_from_frames(path_to_frames, title):
@@ -72,10 +71,10 @@ def generate_video_from_frames(path_to_frames, title):
     :param path_to_frames: folder containing all histogram figures
     :param title: name of video file to be generated
     """
-    os.chdir(path_to_frames)
     mean_height = 0
     mean_width = 0
-    num_of_images = len(os.listdir('.'))
+    num_of_images = load_one_setting(settings_filename, 'MAX_CYCLES')
+    os.chdir(path_to_frames)
     '''Loading all frames'''
     for file in os.listdir('.'):
         if file.endswith(".jpg") or file.endswith(".jpeg") or file.endswith("png") or file.endswith("JPEG"):
@@ -93,7 +92,7 @@ def generate_video_from_frames(path_to_frames, title):
             imResize = im.resize((mean_width, mean_height), Image.ANTIALIAS)
             imResize.save(file, 'JPEG', quality=95)
     release_video(title)
-    os.chdir('..')
+    os.chdir(r'../..')
 
 def release_video(title):
     """
@@ -131,14 +130,13 @@ def create_trace_file(rims_object):
         os.makedirs(rims_object.path_for_output)
     with open(rims_object.path_for_output + 'simulation trace.csv', newline='', mode='a') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        title_row = [f"x{i}" for i in range(MAX_CYCLES * rims_object.intervals_in_period)]
+        title_row = [f"x{i}" for i in range(load_one_setting(settings_filename,'MAX_CYCLES') * rims_object.intervals_in_period)]
         writer.writerow(title_row)
 
         for ion in rims_object.ions_lst:
             writer.writerow(ion.loc_array)
     write_to_log(rims_object, "trace file created")
     return
-
 
 def create_log_file(rims_object):
     if not os.path.exists(rims_object.path_for_output):
@@ -176,7 +174,7 @@ def create_summary_file(rims_object):
             f.write("\tduty cycle: " + str(rims_object.time_vec[0] * rims_object.flash_frequency) + "\n")
 
         f.write("\nSimulation settings\n")
-        f.write("\tnumber of particles simulated: " + str(rims_object.PARTICLES_SIMULATED) + "\n")
+        f.write("\tnumber of particles simulated: " + str(rims_object.settings['PARTICLES_SIMULATED']) + "\n")
         f.write("\tmeasurements per particle: " + str(rims_object.cycles_count * rims_object.intervals_in_period) + "\n")
         f.write("\ttime measurement intervals (delta_t): " + str(rims_object.interval) + "[sec]\n")
         f.write("\tfriction coefficient (gamma): " + str(rims_object.gamma) + "[eVsec/cm^2]\n")
@@ -353,10 +351,16 @@ def create_unique_id():
         + str(now.strftime("%X")).replace(':', '')
     return uid
 
-def percentage_progress(n, N):
-    progress = int(n * 100) / int(N)
-    sys.stdout.write("\r%d%%" % progress)
-    sys.stdout.flush()
+def percentage_progress(n, N, rims_object):
+
+    if rims_object and rims_object.gui:
+        rims_object.pb.UpdateBar(1000 * rims_object.pb_iter / rims_object.pb_max)
+        rims_object.pb_iter += 1
+    else:
+        progress = int(n * 100) / int(N)
+        sys.stdout.write("\r%d%%" % progress)
+        sys.stdout.flush()
+
     return
 
 def create_test_csv(rims_object):

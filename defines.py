@@ -12,6 +12,64 @@ All units in cm / sec / Hz / kelvin / ev
                         EXTRACTION OF SETTINGS
 ----------------------------------------------------------------------'''
 
+def remove_ion_from_dict(ion_file, entry_tup):
+    ions_dict = load_settings(ion_file)
+    del ions_dict[entry_tup[0]]
+
+    with open(ion_file, newline='', mode='w') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        writer.writerows(ions_dict.items())
+
+    return True
+
+def add_ion_to_dict(ion_file, new_ion_tup):
+    try:
+        new_ion_tup = new_ion_tup.split(',')
+        float(new_ion_tup[1])
+        if len(new_ion_tup) != 2:
+            return False
+    except:
+        return False
+
+    ions_dict = load_settings(ion_file)
+    ions_dict[new_ion_tup[0]] = float(new_ion_tup[1])
+
+    with open(ion_file, newline='', mode='w') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        writer.writerows(ions_dict.items())
+
+    return True
+
+def edit_settings(settings_file, parameter, value):
+    updated_file = []
+    with open(settings_file, mode='r') as csv_file:
+        reader = csv.reader(csv_file)
+        for row in reader:
+            if row[0].lower() == parameter.lower():
+                row[1] = value
+            updated_file.append(row)
+
+    with open(settings_file, newline='', mode='w') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        writer.writerows(updated_file)
+    return load_settings(settings_file)
+
+def load_one_setting(settings_file, parameter):
+    with open(settings_file, mode='r') as csv_file:
+        reader = csv.reader(csv_file)
+        for row in reader:
+            if row[0].lower() == parameter.lower():
+                value = row[1]
+        bool_ = detect_bool_from_str(value)
+        if bool_ != None:
+            return bool_
+        try:
+            value = float(value)
+            if value.is_integer():
+                value = int(value)
+        except ValueError:
+            pass
+        return value
 
 def load_settings(settings_file):
     """
@@ -26,6 +84,8 @@ def load_settings(settings_file):
             value = row[1]
             try:
                 value = float(row[1])
+                if value.is_integer():
+                    value = int(value)
             except ValueError:
                 pass
             settings_dict[row[0]] = value
@@ -34,18 +94,22 @@ def load_settings(settings_file):
 def detect_bool_from_str(string):
     if string.lower() in ['true', 'y', 'yes', 't']:
         return True
-    return False
+    elif string.lower() in ['false', 'n', 'no', 'f']:
+        return False
+    else:
+        return None
 
-
-settings = load_settings('settings.csv')
-diffusion_coefficient_dict = load_settings('diffusion_coefficients.csv')
+settings_filename = 'settings.csv'
+ion_file = 'diffusion_coefficients.csv'
+settings = load_settings(settings_filename)
+diffusion_coefficient_dict = load_settings(ion_file)
 
 '''----------------------------------------------------------------------
                                 DEFINES
 ----------------------------------------------------------------------'''
 
 '''VERSION'''
-VERSION = '1.9.5'
+VERSION = '1.9.6'
 
 '''DEBUG PARAMETERS'''
 d_alpha = -1
@@ -72,21 +136,18 @@ BOLTZMANN_CONSTANT_J = 1.380649 * pow(10, -23)
 TEMPERATURE = 293
 
 '''SIMULATION PARAMETERS'''
-ENABLE_VIDEO = detect_bool_from_str(settings['ENABLE_VIDEO'])
-CREATE_TRACE = detect_bool_from_str(settings['CREATE_TRACE'])
 ALPHA = -1
-PARTICLES_SIMULATED = int(settings['PARTICLES_SIMULATED'])
-STEADY_STATE_PERCENT_MARGIN = float(settings['STEADY_STATE_PERCENT_MARGIN'])
+#PARTICLES_SIMULATED = int(settings['PARTICLES_SIMULATED'])
+STEADY_STATE_PERCENT_MARGIN = load_one_setting(settings_filename,'STEADY_STATE_PERCENT_MARGIN')
 IONS_PER_THREAD = 100
-NUMBER_OF_THREADS = int(PARTICLES_SIMULATED/IONS_PER_THREAD)
-MAX_CYCLES = int(settings['MAX_CYCLES'])
+#NUMBER_OF_THREADS = int(PARTICLES_SIMULATED/IONS_PER_THREAD)
 INTERVALS_FLASH_RATIO = 10
 INTERVALS_FLASH_RATIO_ELECTRONS = 50
-RESOLUTION = int(settings['RESOLUTION'])
-RATCHETS_IN_SYSTEM = int(settings['RATCHETS_IN_SYSTEM'])
+RESOLUTION = load_one_setting(settings_filename,'RESOLUTION')
+RATCHETS_IN_SYSTEM = load_one_setting(settings_filename,'RATCHETS_IN_SYSTEM')
 MIN_MEASUREMENTS_FOR_SS = 10
-OVERWRITE_DELTA_T = detect_bool_from_str(settings['OVERWRITE_DELTA_T'])
-DELTA_T = float(settings['DELTA_T']) * pow(10, -6)
+OVERWRITE_DELTA_T = load_one_setting(settings_filename,'OVERWRITE_DELTA_T')
+DELTA_T = load_one_setting(settings_filename,'DELTA_T') * pow(10, -6)
 
 '''KEDEM PROBLEM PARAMETERS'''
 NE = 1 * pow(10, 15)

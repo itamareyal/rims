@@ -17,13 +17,14 @@ def headline_panel():
     print("     RIMS - Ratchet based Ion Movement Simulator")
     print("     version " + VERSION)
     print("-------------------------------------------------------")
-    print("For instructions, please refer to the README file\n")
     return
 
-def execution_rerun_panel():
+def simulation_over_panel():
     print("\n-------------------------------------------------------")
     print("                 Simulation over")
     print("-------------------------------------------------------")
+
+def execution_rerun_panel():
     rerun = input("\nPress y and ENTER to run an new simulation, otherwise press ENTER...\n")
     if rerun == 'y':
         return True

@@ -50,7 +50,7 @@ def create_video_of_histograms(frame_mat, ion_dict, rims_object):
             x_results = frame_mat[i_ion][cycle]
             x_results_um = [dx * pow(10, 4) for dx in x_results]
             weights = np.ones_like(x_results_um) / float(len(x_results_um))
-            plt.hist(x_results_um, weights=weights, bins=RESOLUTION, label=str(ion[0]))
+            plt.hist(x_results_um, weights=weights, bins=load_one_setting(settings_filename,'RESOLUTION'), label=str(ion[0]))
         '''Plot attributes and labels'''
         plt.ylabel('Density')
         plt.xlabel(r'X [$\mu $m]')
@@ -122,6 +122,15 @@ def sort_by_title(x):
     num = x.split('.')[0]
     num = num.split('_')[1]
     return int(num)
+
+def sort_output_folders(x):
+    try:
+        num = x.split(' ')[0]
+        num = num.replace('-','').replace('_','')
+        return int(num)
+    except:
+        return 0
+    
 
 
 '''----------------LOG & TRACE----------------'''
@@ -261,12 +270,13 @@ def plot_distribution_over_x_histogram(rims_object, x_plot_list):
     plot_id = create_unique_id()
     plt.figure(plot_id)
     x_periodic_system = []
+    ratchets = load_one_setting(settings_filename,'RATCHETS_IN_SYSTEM')
     for x in x_plot_list:
         x_periodic = x
-        while x_periodic > RATCHETS_IN_SYSTEM * rims_object.L:
-            x_periodic -= RATCHETS_IN_SYSTEM * rims_object.L
+        while x_periodic > ratchets * rims_object.L:
+            x_periodic -= ratchets * rims_object.L
         while x_periodic < 0:
-            x_periodic += RATCHETS_IN_SYSTEM * rims_object.L
+            x_periodic += ratchets * rims_object.L
         x_periodic_system.append(x_periodic)
     x_results_um = [x * np.power(10, 4) for x in x_periodic_system]
     plt.hist(x_results_um, weights=weights, bins=rims_object.resolution, label=r"X [$\mu $m]")

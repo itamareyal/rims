@@ -59,7 +59,8 @@ class Rims:
         self.settings = load_settings(settings_filename)
         self.fast_mode = fast_mode
         self.steady_state = False
-        self.resolution = RESOLUTION if self.potential_profile_mat.shape[1] < RESOLUTION\
+        self.resolution = load_one_setting(settings_filename,'RESOLUTION') \
+            if self.potential_profile_mat.shape[1] < load_one_setting(settings_filename,'RESOLUTION')\
             else self.potential_profile_mat.shape[1]
         self.electric_field_mat = self.get_electric_field()
         self.ions_lst = [Rims.create_ion(self) for _ in range(self.settings['PARTICLES_SIMULATED'])]
@@ -98,9 +99,10 @@ class Rims:
         Calculates the length of a time interval delta_t
         """
         '''Check for manual dt overwrite in settings'''
-        if OVERWRITE_DELTA_T:
-            write_to_log(self, "manual overwrite for delta t detected and is "+str(DELTA_T)+"[sec]")
-            return DELTA_T
+        if load_one_setting(settings_filename,'OVERWRITE_DELTA_T'):
+            dt = load_one_setting(settings_filename,'DELTA_T') * pow(10, -6)
+            write_to_log(self, "manual overwrite for delta t detected and is "+str(dt)+"[usec]")
+            return dt
         '''Special dt for electrons'''
         if self.ion == "Electrons in Silicon":
             return self.flash_period / INTERVALS_FLASH_RATIO_ELECTRONS

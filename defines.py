@@ -109,7 +109,7 @@ diffusion_coefficient_dict = load_settings(ion_file)
 ----------------------------------------------------------------------'''
 
 '''VERSION'''
-VERSION = '1.9.6'
+VERSION = '1.9.7'
 
 '''DEBUG PARAMETERS'''
 d_alpha = -1

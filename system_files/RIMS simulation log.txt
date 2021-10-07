@@ -1,0 +1,48 @@
+RIMS simulation log
+
+11:22:17 -	gamma factor calculated 2671.829254778837[eVsec/cm^2]
+11:22:17 -	delta t calculated and is 5.291005291005292e-08[usec]
+11:22:17 -	electric field generated
+11:22:20 -	potential profile plot saved
+11:22:20 -	RIMS simulation initialized
+11:22:25 -	cycle 0 completed. velocity is -126.53171866273395[cm/sec]
+11:22:25 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
+11:22:27 -	cycle 1 completed. velocity is -203.81221287397184[cm/sec]
+11:22:27 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
+11:22:29 -	cycle 2 completed. velocity is -208.33579413114634[cm/sec]
+11:22:29 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
+11:22:30 -	cycle 3 completed. velocity is -204.95479798770947[cm/sec]
+11:22:30 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
+11:22:32 -	cycle 4 completed. velocity is -202.80333630317296[cm/sec]
+11:22:32 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
+11:22:33 -	cycle 5 completed. velocity is -204.6668730112346[cm/sec]
+11:22:33 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
+11:22:35 -	cycle 6 completed. velocity is -203.73591741729882[cm/sec]
+11:22:35 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
+11:22:37 -	cycle 7 completed. velocity is -208.12067826097487[cm/sec]
+11:22:37 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
+11:22:38 -	cycle 8 completed. velocity is -200.3318222307707[cm/sec]
+11:22:38 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
+11:22:40 -	cycle 9 completed. velocity is -200.33142579255215[cm/sec]
+11:22:40 -	steady state reached after 9 cycles
+11:22:41 -	cycle 10 completed. velocity is -204.82592543163648[cm/sec]
+11:22:41 -	steady state maintained after 9 cycles
+11:22:43 -	cycle 11 completed. velocity is -203.4888282737828[cm/sec]
+11:22:43 -	steady state maintained after 9 cycles
+11:22:44 -	cycle 12 completed. velocity is -200.99541142655536[cm/sec]
+11:22:44 -	steady state maintained after 9 cycles
+11:22:45 -	cycle 13 completed. velocity is -205.10250074593057[cm/sec]
+11:22:45 -	steady state maintained after 9 cycles
+11:22:47 -	cycle 14 completed. velocity is -204.20172741755613[cm/sec]
+11:22:47 -	steady state maintained after 9 cycles
+11:22:48 -	cycle 15 completed. velocity is -198.7913711481517[cm/sec]
+11:22:48 -	steady state maintained after 9 cycles
+11:22:48 -	data collected for histogram
+11:22:48 -	summary file created
+11:22:50 -	Distribution histogram infinite saved
+11:22:53 -	Distribution histogram periodic saved
+11:22:53 -	average speed plot saved
+11:22:53 -	simulation finished
+11:22:53 -	summary file printed
+11:24:11 -	Data added to multiple ions histogram
+11:24:17 -	Multiple ions histogram saved

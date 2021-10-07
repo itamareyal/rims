@@ -113,13 +113,14 @@ def display_folder_all(folder):
         f
         for f in file_list
         
-        if os.path.isfile(os.path.join(folder, f))
+        if (os.path.isfile(os.path.join(folder, f))
         and (f.lower().endswith((".csv")) 
         or f.lower().endswith((".png")) 
         or f.lower().endswith((".jpeg"))
         or f.lower().endswith((".avi"))
         or f.lower().endswith((".txt")))
-        or os.path.isdir(os.path.join(folder, f.lower()))
+        or os.path.isdir(os.path.join(folder, f.lower())))
+        and not f.lower().startswith('cycle_')
     ]
     fnames = sorted(fnames, key=sort_output_folders)
     return fnames
@@ -143,7 +144,7 @@ file_list_column = [
 image_viewer_column = [
     [   sg.Text("Choose a ratchet from list on left:",font=MENU_FONT)],
     [   sg.Text( key="-TOUT-",font=MENU_FONT)],
-    [   sg.Image(key="-IMAGE-",filename=potential_profiles_folder+r'/'+'blank_preview.jpeg')],
+    [   sg.Image(key="-IMAGE-",filename='system_files/blank_preview.jpeg')],
 ]
 
 layout_potential_profile = [
@@ -191,7 +192,7 @@ output_list_column = [
     ],
 ]
 
-output_tab_img = [[   sg.Image(key="-RESULTS_IMAGE-",filename=potential_profiles_folder+r'/'+'blank_preview.jpeg')]]
+output_tab_img = [[   sg.Image(key="-RESULTS_IMAGE-",filename='system_files/blank_preview.jpeg')]]
 output_tab_txt = [[   sg.Multiline(key="-RESULTS_MLINE-", font=MENU_FONT,size=TEXT_OUTPUT_SIZE)]]
 
 output_tabgroup = [[sg.TabGroup([

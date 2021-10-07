@@ -1,0 +1,22 @@
+RIMS simulation summary
+
+	time created: 2021-10-03 11:22:17.954820
+	test duration: 0:00:30.616135
+	simulated time: 1.28e-05[sec]
+
+	particles in the system: Lead Pb+2
+	diffusion coefficient: 9.45e-06[cm^2/sec]
+	temperature: 293[k]
+
+Ratchet potential profile
+	width: 1.0[um]
+	frequency: 1250000.0[Hz]
+	period: 8e-07[sec]
+
+Simulation settings
+	number of particles simulated: 2500
+	measurements per particle: 240
+	time measurement intervals (delta_t): 5.291005291005292e-08[sec]
+	friction coefficient (gamma): 2671.829254778837[eVsec/cm^2]
+	resolution: 1000 (no. of dx along a single ratchet)
+	velocity: -203.63324149682964[cm/sec]

@@ -6,17 +6,19 @@
 #### The product is RIMS (Ratchet based Ions Movement Simulator), a console-based application capable of receiving any potential profile, any physical diffusion coefficient and plotting various graphs of ion movement.
 #### Patent number: US20200402782A1
 ## Usage- GUI
-#### To run the gui launch application via gui.py script.
+#### To run the gui, launch application via gui.py script. Make sure you install all dependencies (listed below under dependencies)
     python gui.py
 #### The GUI allows the user to choose a potential profile, ions and run simulations. It also allows to change the simulation settings and view the outputs (including videos).
 ### RIMS GUI simulation:
-![gui_simulation](https://github.com/itamareyal/rims/system_files/simulation.png?raw=true)
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/simulation.png?raw=true" width="500">
+
 ### RIMS GUI output menu:
-![gui_output](https://github.com/itamareyal/rims/system_files/output.png?raw=true)
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/output.png?raw=true" width="500">
 
-## Usage- Terminal
 
-#### Executing the main script 'rims.exe' launches the console interface. If all dependecies are installed (view dependencies below), you can also run rims.py from the cmd prompt / terminal:
+## Usage- Terminal (no dependencied needed)
+
+#### Executing the file **rims.exe** launches the console interface. If all dependecies are installed (view dependencies below), you can also run rims.py from the cmd prompt / terminal:
     python rims.py
 
 #### Creating the simulation is done in 2 steps:
@@ -54,7 +56,8 @@ vk0 | vk1 | vk2 | ... | vkn
 ------------ | ------------- | ------------- | ------------ | ------------- | ------------- | 
 0|0.2|0.35|0.45|0.5|0.3|0
 
-![r1](https://github.com/itamareyal/rims/system_files/r1.jpeg?raw=true)
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/r1.jpeg?raw=true" width="360">
+
 
 #### notice how when k=1, RIMS copies the only profile and creates another that is multiplied by -1
 
@@ -89,24 +92,27 @@ vk0 | vk1 | vk2 | ... | vkn
 * _PySimpleGui_ (For GUI usage only)
 
 ## Outputs
-#### Every simulation is presented by the following outputs. All saved to folder "RIMS output plots / [time stamp] [Ion] /"
+#### All outputs are saved to folder "simulation outputs / [time stamp] [Ion] /"
 #### All outputs are also avilable to view via the GUI
 * _Distribution histogram of all ions simulated_
-
-![distribution_hist](https://github.com/itamareyal/rims/system_files/Distribution histogram.png?raw=true)
+  
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/Distribution%20histogram.png?raw=true" width="360">
 
 * _Distribution histogram periodic_
+  
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/Distribution%20histogram%20periodic.jpeg?raw=true" width="360">
 
-![periodic_hist](https://github.com/itamareyal/rims/system_files/Distribution histogram periodic.jpeg?raw=true)
 * _Distribution histogram infinite_
+  
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/Distribution%20histogram%20infinite.jpeg?raw=true" width="360">
 
-![infinite_hist](https://github.com/itamareyal/rims/system_files/Distribution histogram infinite.jpeg?raw=true)
 * _Ratchet potential profiles_
+  
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/Ratchet%20potential%20profiles.jpeg?raw=true" width="360">
 
-![ratchet](https://github.com/itamareyal/rims/system_files/Ratchet potential profiles.jpeg?raw=true)
 * _Average speed of ions over ratchet cycle_
-
-![speed](https://github.com/itamareyal/rims/system_files/Average speed of ions over ratchet cycles.jpeg?raw=true)
+  
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/Average%20speed%20of%20ions%20over%20ratchet%20cycles.jpeg?raw=true" width="360">
 
 * _RIMS simulation summary_
 ```
@@ -144,34 +150,12 @@ RIMS simulation log
 11:22:20 -	RIMS simulation initialized
 11:22:25 -	cycle 0 completed. velocity is -126.53171866273395[cm/sec]
 11:22:25 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
-11:22:27 -	cycle 1 completed. velocity is -203.81221287397184[cm/sec]
-11:22:27 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
-11:22:29 -	cycle 2 completed. velocity is -208.33579413114634[cm/sec]
-11:22:29 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
-11:22:30 -	cycle 3 completed. velocity is -204.95479798770947[cm/sec]
-11:22:30 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
-11:22:32 -	cycle 4 completed. velocity is -202.80333630317296[cm/sec]
-11:22:32 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
-11:22:33 -	cycle 5 completed. velocity is -204.6668730112346[cm/sec]
-11:22:33 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
-11:22:35 -	cycle 6 completed. velocity is -203.73591741729882[cm/sec]
-11:22:35 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
-11:22:37 -	cycle 7 completed. velocity is -208.12067826097487[cm/sec]
-11:22:37 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
-11:22:38 -	cycle 8 completed. velocity is -200.3318222307707[cm/sec]
-11:22:38 -	cycle count still lower than MIN_MEASUREMENTS_FOR_SS=10
+...
 11:22:40 -	cycle 9 completed. velocity is -200.33142579255215[cm/sec]
 11:22:40 -	steady state reached after 9 cycles
 11:22:41 -	cycle 10 completed. velocity is -204.82592543163648[cm/sec]
 11:22:41 -	steady state maintained after 9 cycles
-11:22:43 -	cycle 11 completed. velocity is -203.4888282737828[cm/sec]
-11:22:43 -	steady state maintained after 9 cycles
-11:22:44 -	cycle 12 completed. velocity is -200.99541142655536[cm/sec]
-11:22:44 -	steady state maintained after 9 cycles
-11:22:45 -	cycle 13 completed. velocity is -205.10250074593057[cm/sec]
-11:22:45 -	steady state maintained after 9 cycles
-11:22:47 -	cycle 14 completed. velocity is -204.20172741755613[cm/sec]
-11:22:47 -	steady state maintained after 9 cycles
+...
 11:22:48 -	cycle 15 completed. velocity is -198.7913711481517[cm/sec]
 11:22:48 -	steady state maintained after 9 cycles
 11:22:48 -	data collected for histogram
@@ -186,8 +170,8 @@ RIMS simulation log
 ```
 
 * _Simulation trace_
-#### Video outputs are saved in "Video outputs" folder
-#### Histograms of all ion types on the same plot are saved in "Multiple ions histograms" folder
+#### Video outputs are saved in "simulation outputs/00_Video outputs" folder
+#### Histograms of all ion types on the same plot are saved in "simulation outputs/00_Multiple ions histograms" folder
 
 ## Credits
 #### Eran Weil
@@ -195,5 +179,5 @@ RIMS simulation log
 #### Dr. Gideon Segev
 ###### Energy devices lab, Tel-Aviv university
 
-![us](https://github.com/itamareyal/rims/system_files/IMG-3441.jpg?raw=true)
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/IMG-3441.jpg?raw=true" width="360">
 

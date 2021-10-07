@@ -10,10 +10,10 @@
     python gui.py
 #### The GUI allows the user to choose a potential profile, ions and run simulations. It also allows to change the simulation settings and view the outputs (including videos).
 ### RIMS GUI simulation:
-<img src="https://github.com/itamareyal/rims/blob/main/system_files/simulation.png?raw=true" width="500">
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/simulation.png?raw=true" width="800">
 
 ### RIMS GUI output menu:
-<img src="https://github.com/itamareyal/rims/blob/main/system_files/output.png?raw=true" width="500">
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/output.png?raw=true" width="800">
 
 
 ## Usage- Terminal (no dependencied needed)
@@ -56,7 +56,7 @@ vk0 | vk1 | vk2 | ... | vkn
 ------------ | ------------- | ------------- | ------------ | ------------- | ------------- | 
 0|0.2|0.35|0.45|0.5|0.3|0
 
-<img src="https://github.com/itamareyal/rims/blob/main/system_files/r1.jpeg?raw=true" width="360">
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/r1.jpeg?raw=true" width="500">
 
 
 #### notice how when k=1, RIMS copies the only profile and creates another that is multiplied by -1
@@ -96,23 +96,23 @@ vk0 | vk1 | vk2 | ... | vkn
 #### All outputs are also avilable to view via the GUI
 * _Distribution histogram of all ions simulated_
   
-<img src="https://github.com/itamareyal/rims/blob/main/system_files/Distribution%20histogram.png?raw=true" width="360">
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/Distribution%20histogram.png?raw=true" width="500">
 
 * _Distribution histogram periodic_
   
-<img src="https://github.com/itamareyal/rims/blob/main/system_files/Distribution%20histogram%20periodic.jpeg?raw=true" width="360">
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/Distribution%20histogram%20periodic.jpeg?raw=true" width="500">
 
 * _Distribution histogram infinite_
   
-<img src="https://github.com/itamareyal/rims/blob/main/system_files/Distribution%20histogram%20infinite.jpeg?raw=true" width="360">
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/Distribution%20histogram%20infinite.jpeg?raw=true" width="500">
 
 * _Ratchet potential profiles_
   
-<img src="https://github.com/itamareyal/rims/blob/main/system_files/Ratchet%20potential%20profiles.jpeg?raw=true" width="360">
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/Ratchet%20potential%20profiles.jpeg?raw=true" width="500">
 
 * _Average speed of ions over ratchet cycle_
   
-<img src="https://github.com/itamareyal/rims/blob/main/system_files/Average%20speed%20of%20ions%20over%20ratchet%20cycles.jpeg?raw=true" width="360">
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/Average%20speed%20of%20ions%20over%20ratchet%20cycles.jpeg?raw=true" width="500">
 
 * _RIMS simulation summary_
 ```
@@ -179,5 +179,5 @@ RIMS simulation log
 #### Dr. Gideon Segev
 ###### Energy devices lab, Tel-Aviv university
 
-<img src="https://github.com/itamareyal/rims/blob/main/system_files/IMG-3441.jpg?raw=true" width="360">
+<img src="https://github.com/itamareyal/rims/blob/main/system_files/IMG-3441.jpg?raw=true" width="500">
 
